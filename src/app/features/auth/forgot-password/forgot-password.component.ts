@@ -1,0 +1,172 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+
+@Component({
+  selector: 'app-forgot-password',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule
+  ],
+  template: `
+    <div class="auth-container">
+      <mat-card class="auth-card">
+        <mat-card-header>
+          <mat-card-title>Reset Password</mat-card-title>
+          <mat-card-subtitle>Enter your email to reset your password</mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <form [formGroup]="forgotPasswordForm" (ngSubmit)="onSubmit()">
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput 
+                     type="email" 
+                     formControlName="email"
+                     autocomplete="email">
+              <mat-icon matSuffix>email</mat-icon>
+              <mat-error *ngIf="forgotPasswordForm.get('email')?.hasError('required')">
+                Email is required
+              </mat-error>
+              <mat-error *ngIf="forgotPasswordForm.get('email')?.hasError('email')">
+                Please enter a valid email
+              </mat-error>
+            </mat-form-field>
+            
+            <div class="form-actions">
+              <button type="submit" 
+                      mat-raised-button 
+                      class="primary-btn"
+                      [disabled]="forgotPasswordForm.invalid">
+                Send Reset Link
+              </button>
+              
+              <a routerLink="/auth/login" class="back-to-login">
+                Back to Login
+              </a>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  `,
+  styles: [`
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+    }
+    
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    .mat-mdc-card-header {
+      text-align: center;
+      padding-bottom: 0;
+    }
+    
+    .mat-mdc-card-title {
+      color: #ff6b35;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    
+    .mat-mdc-card-subtitle {
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 0.5rem;
+    }
+    
+    .mat-mdc-card-content {
+      padding-top: 2rem;
+    }
+    
+    .mat-mdc-form-field {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    
+    ::ng-deep .mat-mdc-text-field-wrapper {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    
+    ::ng-deep .mat-mdc-form-field-input-control {
+      color: white;
+    }
+    
+    ::ng-deep .mat-mdc-form-field-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    ::ng-deep .mat-mdc-outline {
+      color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .form-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .primary-btn {
+      width: 100%;
+      background: linear-gradient(45deg, #ff6b35, #f7931e);
+      color: white;
+      border-radius: 25px;
+      padding: 12px 24px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .back-to-login {
+      color: #ff6b35;
+      text-decoration: none;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    
+    .back-to-login:hover {
+      text-decoration: underline;
+    }
+  `]
+})
+export class ForgotPasswordComponent {
+  forgotPasswordForm: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.forgotPasswordForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]]
+    });
+  }
+
+  onSubmit() {
+    if (this.forgotPasswordForm.valid) {
+      // Handle forgot password logic
+      console.log('Forgot password request:', this.forgotPasswordForm.value);
+    }
+  }
+}
