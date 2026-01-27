@@ -19,6 +19,7 @@ import { WalletEffects } from './store/wallet/wallet.effects';
 import { LeagueEffects } from './store/league/league.effects';
 import { LeaderboardEffects } from './store/leaderboard/leaderboard.effects';
 import { environment } from '../environments/environment';
+import { LucideAngularModule, User as UserIcon, Coins, Plus, Menu, Trophy, History } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -26,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
     provideAnimationsAsync(),
     importProvidersFrom(BrowserAnimationsModule),
+    importProvidersFrom(LucideAngularModule.pick({ User: UserIcon, Coins, Plus, Menu, Trophy, History })),
     provideStore({
       auth: authReducer,
       wallet: walletReducer,

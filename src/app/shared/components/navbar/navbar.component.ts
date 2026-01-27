@@ -5,6 +5,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { User } from '../../../core/models/user.model';
@@ -22,62 +23,75 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
     MatToolbarModule,
     MatButtonModule,
     MatMenuModule,
-    MatIconModule
+    MatIconModule,
+    LucideAngularModule
   ],
   template: `
     <mat-toolbar class="navbar">
       <div class="navbar-content">
-        <div class="navbar-brand" routerLink="/">
-          <h2>🔥 FireEsports</h2>
+        <mat-menu #userMenu="matMenu">
+          <button mat-menu-item routerLink="/profile">
+            <mat-icon>person</mat-icon>
+            <span>Profile</span>
+          </button>
+          <button mat-menu-item routerLink="/wallet">
+            <mat-icon>account_balance_wallet</mat-icon>
+            <span>Wallet</span>
+          </button>
+          <div *ngIf="(currentUser$ | async)?.isAdmin">
+            <button mat-menu-item routerLink="/admin">
+              <mat-icon>admin_panel_settings</mat-icon>
+              <span>Admin Panel</span>
+            </button>
+          </div>
+          <button mat-menu-item (click)="onLogout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+        <div class="left-cluster">
+          <div class="medal-icon">
+            <img src="/assets/medals/ruby.png" alt="Rank" />
+          </div>
+          <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-trigger">
+            <lucide-icon name="user" class="icon"></lucide-icon>
+            <span>{{ (currentUser$ | async)?.username || 'Guest' }}</span>
+          </button>
+          <div class="wallet-balance" routerLink="/wallet">
+            <lucide-icon name="coins" class="icon"></lucide-icon>
+            <span>{{ walletBalance$ | async | number:'1.0-0' }}</span>
+            <lucide-icon name="plus" class="icon"></lucide-icon>
+          </div>
         </div>
         
-        <nav class="navbar-nav" *ngIf="isAuthenticated$ | async">
-          <a routerLink="/leaderboard" routerLinkActive="active">Leaderboard</a>
-        </nav>
+        <div class="brand" routerLink="/">
+          <h2>Firesports</h2>
+        </div>
+        
+        <div class="center-actions hide-mobile">
+          <a class="icon-link" routerLink="/leaderboard" routerLinkActive="active">
+            <lucide-icon name="trophy" class="icon"></lucide-icon>
+          </a>
+          <a class="icon-link" routerLink="/history" routerLinkActive="active">
+            <lucide-icon name="history" class="icon"></lucide-icon>
+          </a>
+        </div>
         
         <div class="navbar-actions">
-          <div *ngIf="isAuthenticated$ | async; else authButtons" class="user-section">
-            <div class="wallet-balance" routerLink="/wallet">
-              <mat-icon>account_balance_wallet</mat-icon>
-              <span>{{ walletBalance$ | async | number:'1.0-0' }} coins</span>
-            </div>
-            
-            <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-trigger">
-              <img [src]="(currentUser$ | async)?.avatar || '/assets/default-avatar.png'" 
-                   class="user-avatar" 
-                   [alt]="(currentUser$ | async)?.username">
-              <span>{{ (currentUser$ | async)?.username }}</span>
-              <mat-icon>keyboard_arrow_down</mat-icon>
-            </button>
-            
-            <mat-menu #userMenu="matMenu">
-              <button mat-menu-item routerLink="/profile">
-                <mat-icon>person</mat-icon>
-                <span>Profile</span>
-              </button>
-              <button mat-menu-item routerLink="/wallet">
-                <mat-icon>account_balance_wallet</mat-icon>
-                <span>Wallet</span>
-              </button>
-              <div *ngIf="(currentUser$ | async)?.isAdmin">
-                <!-- <mat-divider></mat-divider> -->
-                <button mat-menu-item routerLink="/admin">
-                  <mat-icon>admin_panel_settings</mat-icon>
-                  <span>Admin Panel</span>
-                </button>
-              </div>
-              <!-- <mat-divider></mat-divider> -->
-              <button mat-menu-item (click)="onLogout()">
-                <mat-icon>logout</mat-icon>
-                <span>Logout</span>
-              </button>
-            </mat-menu>
-          </div>
+          <div *ngIf="isAuthenticated$ | async; else authButtons" class="user-section"></div>
           
           <ng-template #authButtons>
-            <button mat-button routerLink="/auth/login" class="auth-btn">Login</button>
-            <button mat-raised-button routerLink="/auth/register" class="auth-btn primary">Sign Up</button>
+            <button mat-button routerLink="/auth/login" class="auth-btn">
+              <span class="hide-mobile">Login</span>
+            </button>
+            <button mat-raised-button routerLink="/auth/register" class="auth-btn primary">
+              <span class="hide-mobile">Sign Up</span>
+            </button>
           </ng-template>
+          
+          <button mat-icon-button class="hamburger">
+            <lucide-icon name="menu" class="icon"></lucide-icon>
+          </button>
         </div>
       </div>
     </mat-toolbar>
@@ -105,29 +119,10 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
       padding: 0 2rem;
     }
     
-    .navbar-brand h2 {
-      color: #ff6b35;
-      margin: 0;
-      cursor: pointer;
-      font-weight: bold;
-    }
+    .brand h2 { color: #ff6b35; margin: 0; cursor: pointer; font-weight: bold; }
     
-    .navbar-nav {
-      display: flex;
-      gap: 2rem;
-    }
-    
-    .navbar-nav a {
-      color: rgba(255, 255, 255, 0.8);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-    
-    .navbar-nav a:hover,
-    .navbar-nav a.active {
-      color: #ff6b35;
-    }
+    .left-cluster { display: flex; align-items: center; gap: 0.75rem; }
+    .medal-icon img { width: 36px; height: 36px; }
     
     .navbar-actions {
       display: flex;
@@ -159,23 +154,7 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
       transform: translateY(-2px);
     }
     
-    .user-menu-trigger {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: white;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 25px;
-      padding: 0.5rem 1rem;
-    }
-    
-    .user-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #ff6b35;
-    }
+    .user-menu-trigger { display: flex; align-items: center; gap: 0.5rem; color: white; background: rgba(255,255,255,0.1); border-radius: 25px; padding: 0.5rem 1rem; }
     
     .auth-btn {
       color: white;
@@ -189,22 +168,41 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
     }
     
     @media (max-width: 768px) {
+      .navbar {
+        height: 64px;
+      }
       .navbar-content {
         padding: 0 1rem;
+        gap: 0.5rem;
+        flex-wrap: wrap;
       }
-      
-      .navbar-nav {
-        display: none;
+      .brand h2 {
+        font-size: 1.25rem;
       }
-      
+      .center-actions { display: none; }
+      .medal-icon { display: none; }
+      .wallet-balance {
+        padding: 0.25rem 0.75rem;
+      }
       .wallet-balance span {
         display: none;
       }
-      
+      .user-menu-trigger {
+        padding: 0.25rem 0.5rem;
+      }
       .user-menu-trigger span {
         display: none;
       }
+      .auth-btn {
+        padding: 0.25rem 0.5rem;
+        min-width: 40px;
+      }
+      .auth-btn .mat-icon {
+        margin: 0;
+      }
     }
+    .icon { width: 20px; height: 20px; color: white; }
+    .icon-link { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 20px; background: rgba(255,255,255,0.08); }
   `]
 })
 export class NavbarComponent implements OnInit {

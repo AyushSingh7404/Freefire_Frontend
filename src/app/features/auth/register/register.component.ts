@@ -12,6 +12,7 @@ import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { selectAuthLoading, selectAuthError } from '../../../store/auth/auth.selectors';
 import { register, clearError } from '../../../store/auth/auth.actions';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -107,7 +108,20 @@ import { register, clearError } from '../../../store/auth/auth.actions';
               </mat-error>
             </mat-form-field>
             
+            <mat-form-field appearance="outline">
+              <mat-label>OTP</mat-label>
+              <input matInput type="text" formControlName="otp" autocomplete="one-time-code">
+              <mat-error *ngIf="registerForm.get('otp')?.hasError('required') && otpRequired">
+                OTP is required
+              </mat-error>
+            </mat-form-field>
             <div class="form-actions">
+              <button type="button" 
+                      mat-stroked-button 
+                      class="secondary-btn"
+                      (click)="onSendOtp()">
+                Send OTP
+              </button>
               <button type="submit" 
                       mat-raised-button 
                       class="primary-btn"
@@ -120,6 +134,7 @@ import { register, clearError } from '../../../store/auth/auth.actions';
             <div class="error-message" *ngIf="error$ | async as error">
               {{ error }}
             </div>
+            <div class="text-center mt-2" *ngIf="statusMessage">{{ statusMessage }}</div>
           </form>
         </mat-card-content>
         
@@ -247,16 +262,20 @@ export class RegisterComponent implements OnInit {
   hideConfirmPassword = true;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
+  otpRequired = false;
+  statusMessage = '';
 
   constructor(
     private fb: FormBuilder,
-    private store: Store
+    private store: Store,
+    private authService: AuthService
   ) {
     this.registerForm = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
+      confirmPassword: ['', [Validators.required]],
+      otp: ['']
     }, { validators: this.passwordMatchValidator });
 
     this.loading$ = this.store.select(selectAuthLoading);
@@ -278,7 +297,31 @@ export class RegisterComponent implements OnInit {
 
   onSubmit() {
     if (this.registerForm.valid) {
-      this.store.dispatch(register({ userData: this.registerForm.value }));
+      const { email, otp } = this.registerForm.value;
+      if (!otp) {
+        this.otpRequired = true;
+        this.statusMessage = 'Please enter the OTP sent to your email.';
+        return;
+      }
+      this.authService.verifyOtp({ email, otp }).subscribe(res => {
+        if (res.success) {
+          this.store.dispatch(register({ userData: this.registerForm.value }));
+        } else {
+          this.statusMessage = 'Invalid OTP. Please try again.';
+        }
+      });
+    }
+  }
+
+  onSendOtp() {
+    const emailCtrl = this.registerForm.get('email');
+    if (emailCtrl?.valid) {
+      this.authService.sendOtp(emailCtrl.value).subscribe(() => {
+        this.statusMessage = 'OTP sent to your email.';
+        this.otpRequired = true;
+      });
+    } else {
+      this.statusMessage = 'Please enter a valid email to receive OTP.';
     }
   }
 }

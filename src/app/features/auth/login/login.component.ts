@@ -12,6 +12,7 @@ import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { selectAuthLoading, selectAuthError } from '../../../store/auth/auth.selectors';
 import { login, clearError } from '../../../store/auth/auth.actions';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -72,13 +73,31 @@ import { login, clearError } from '../../../store/auth/auth.actions';
               </mat-error>
             </mat-form-field>
             
+            <mat-form-field appearance="outline">
+              <mat-label>OTP</mat-label>
+              <input matInput 
+                     type="text" 
+                     formControlName="otp"
+                     autocomplete="one-time-code">
+              <mat-icon matSuffix>verified</mat-icon>
+              <mat-error *ngIf="loginForm.get('otp')?.hasError('required') && otpRequired">
+                OTP is required
+              </mat-error>
+            </mat-form-field>
+            
             <div class="form-actions">
+              <button type="button"
+                      mat-stroked-button
+                      class="secondary-btn"
+                      (click)="onSendOtp()">
+                Send OTP
+              </button>
               <button type="submit" 
                       mat-raised-button 
                       class="primary-btn"
                       [disabled]="loginForm.invalid || (loading$ | async)">
                 <mat-spinner *ngIf="loading$ | async" diameter="20"></mat-spinner>
-                <span *ngIf="!(loading$ | async)">Login</span>
+                <span *ngIf="!(loading$ | async)">Verify & Login</span>
               </button>
               
               <a routerLink="/auth/forgot-password" class="forgot-password">
@@ -88,6 +107,9 @@ import { login, clearError } from '../../../store/auth/auth.actions';
             
             <div class="error-message" *ngIf="error$ | async as error">
               {{ error }}
+            </div>
+            <div class="text-center mt-2" *ngIf="statusMessage">
+              {{ statusMessage }}
             </div>
           </form>
         </mat-card-content>
@@ -226,14 +248,18 @@ export class LoginComponent implements OnInit {
   hidePassword = true;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
+  otpRequired = false;
+  statusMessage = '';
 
   constructor(
     private fb: FormBuilder,
-    private store: Store
+    private store: Store,
+    private authService: AuthService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      otp: ['']
     });
 
     this.loading$ = this.store.select(selectAuthLoading);
@@ -246,7 +272,31 @@ export class LoginComponent implements OnInit {
 
   onSubmit() {
     if (this.loginForm.valid) {
-      this.store.dispatch(login({ credentials: this.loginForm.value }));
+      const { email, otp } = this.loginForm.value;
+      if (!otp) {
+        this.otpRequired = true;
+        this.statusMessage = 'Please enter the OTP sent to your email.';
+        return;
+      }
+      this.authService.verifyOtp({ email, otp }).subscribe(res => {
+        if (res.success) {
+          this.store.dispatch(login({ credentials: { email, password: this.loginForm.value.password } }));
+        } else {
+          this.statusMessage = 'Invalid OTP. Please try again.';
+        }
+      });
+    }
+  }
+
+  onSendOtp() {
+    const emailCtrl = this.loginForm.get('email');
+    if (emailCtrl?.valid) {
+      this.authService.sendOtp(emailCtrl.value).subscribe(() => {
+        this.statusMessage = 'OTP sent to your email.';
+        this.otpRequired = true;
+      });
+    } else {
+      this.statusMessage = 'Please enter a valid email to receive OTP.';
     }
   }
 }

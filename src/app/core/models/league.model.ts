@@ -1,7 +1,7 @@
 export interface League {
   id: string;
   name: string;
-  tier: 'gold' | 'platinum' | 'diamond';
+  tier: 'silver' | 'gold' | 'diamond' | 'br';
   entryFee: number;
   description: string;
   maxPlayers: number;
@@ -9,11 +9,19 @@ export interface League {
   isActive: boolean;
 }
 
+export interface Division {
+  id: '1v1' | '2v2' | '3v3' | '4v4';
+  name: string;
+  entryFeeLabel: string;
+  rewardsLabel: string;
+}
+
 export interface Room {
   id: string;
   leagueId: string;
   name: string;
   entryFee: number;
+  division: '1v1' | '2v2' | '3v3' | '4v4';
   maxPlayers: number;
   currentPlayers: number;
   status: 'open' | 'closed' | 'in-progress' | 'completed';

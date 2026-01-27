@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { League, Room, JoinRoomRequest } from '../models/league.model';
+import { League, Room, JoinRoomRequest, Division } from '../models/league.model';
 
 @Injectable({
   providedIn: 'root'
@@ -12,25 +12,24 @@ export class LeagueService {
 
   constructor(private http: HttpClient) {}
 
-  // Mock data
   private mockLeagues: League[] = [
     {
-      id: 'gold',
-      name: 'Gold League',
-      tier: 'gold',
-      entryFee: 10,
-      description: 'Entry level tournament for beginners',
+      id: 'silver',
+      name: 'Silver League',
+      tier: 'silver',
+      entryFee: 15,
+      description: 'Perfect for new competitors',
       maxPlayers: 50,
       image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg?auto=compress&cs=tinysrgb&w=400',
       isActive: true
     },
     {
-      id: 'platinum',
-      name: 'Platinum League',
-      tier: 'platinum',
-      entryFee: 50,
-      description: 'Intermediate level with higher rewards',
-      maxPlayers: 30,
+      id: 'gold',
+      name: 'Gold League',
+      tier: 'gold',
+      entryFee: 25,
+      description: 'Mid-tier competition with bigger rewards',
+      maxPlayers: 40,
       image: 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
       isActive: true
     },
@@ -38,10 +37,20 @@ export class LeagueService {
       id: 'diamond',
       name: 'Diamond League',
       tier: 'diamond',
-      entryFee: 100,
-      description: 'Elite tournament for pro players',
-      maxPlayers: 20,
+      entryFee: 50,
+      description: 'Top-tier elite competition',
+      maxPlayers: 30,
       image: 'https://images.pexels.com/photos/275033/pexels-photo-275033.jpeg?auto=compress&cs=tinysrgb&w=400',
+      isActive: true
+    },
+    {
+      id: 'br',
+      name: 'Battle Royale (BR)',
+      tier: 'br',
+      entryFee: 0,
+      description: 'Weekend special with pre-booking',
+      maxPlayers: 100,
+      image: 'https://images.pexels.com/photos/289445/pexels-photo-289445.jpeg?auto=compress&cs=tinysrgb&w=400',
       isActive: true
     }
   ];
@@ -49,13 +58,14 @@ export class LeagueService {
   private mockRooms: Room[] = [
     {
       id: '1',
-      leagueId: 'gold',
-      name: 'Gold Room #1',
-      entryFee: 10,
+      leagueId: 'silver',
+      name: 'Silver Room #1',
+      entryFee: 20,
+      division: '1v1',
       maxPlayers: 50,
       currentPlayers: 35,
       status: 'open',
-      roomId: 'GLD001',
+      roomId: 'SLV001',
       createdBy: 'admin',
       createdAt: new Date(),
       startsAt: new Date(Date.now() + 3600000),
@@ -64,28 +74,31 @@ export class LeagueService {
     {
       id: '2',
       leagueId: 'gold',
-      name: 'Gold Room #2',
-      entryFee: 10,
-      maxPlayers: 50,
-      currentPlayers: 50,
-      status: 'closed',
-      roomId: 'GLD002',
+      name: 'Gold Room #1',
+      entryFee: 30,
+      division: '2v2',
+      maxPlayers: 40,
+      currentPlayers: 28,
+      status: 'open',
+      roomId: 'GLD001',
       createdBy: 'admin',
       createdAt: new Date(),
-      startsAt: new Date(Date.now() + 7200000),
+      startsAt: new Date(Date.now() + 5400000),
       players: []
     },
     {
       id: '3',
-      leagueId: 'platinum',
-      name: 'Platinum Championship',
+      leagueId: 'diamond',
+      name: 'Diamond Room #1',
       entryFee: 50,
+      division: '4v4',
       maxPlayers: 30,
       currentPlayers: 18,
       status: 'open',
+      roomId: 'DMN001',
       createdBy: 'admin',
       createdAt: new Date(),
-      startsAt: new Date(Date.now() + 5400000),
+      startsAt: new Date(Date.now() + 7200000),
       players: []
     }
   ];
@@ -118,5 +131,36 @@ export class LeagueService {
 
   leaveRoom(roomId: string): Observable<{ success: boolean }> {
     return of({ success: true }).pipe(delay(500));
+  }
+
+  getDivisionsForLeague(leagueId: string): Observable<Division[]> {
+    let divisions: Division[] = [];
+    if (leagueId === 'silver') {
+      divisions = [
+        { id: '1v1', name: '1v1', entryFeeLabel: 'Entry 20 coins', rewardsLabel: 'Winner 30 coins' },
+        { id: '2v2', name: '2v2', entryFeeLabel: 'Entry 20 coins/player', rewardsLabel: 'Winning team 30 coins each' },
+        { id: '3v3', name: '3v3', entryFeeLabel: 'Entry 15 coins/player', rewardsLabel: '3 coins/kill; MVP +20 coins' },
+        { id: '4v4', name: '4v4', entryFeeLabel: 'Entry 15 coins/player', rewardsLabel: '3 coins/kill; MVP +20 coins' }
+      ];
+    } else if (leagueId === 'gold') {
+      divisions = [
+        { id: '1v1', name: '1v1', entryFeeLabel: 'Entry 40 coins', rewardsLabel: 'Winner 60 coins' },
+        { id: '2v2', name: '2v2', entryFeeLabel: 'Entry 30 coins/player', rewardsLabel: 'Winning team 50 coins each' },
+        { id: '3v3', name: '3v3', entryFeeLabel: 'Entry 25 coins/player', rewardsLabel: '5 coins/kill; MVP +40 coins' },
+        { id: '4v4', name: '4v4', entryFeeLabel: 'Entry 25 coins/player', rewardsLabel: '5 coins/kill; MVP +40 coins' }
+      ];
+    } else if (leagueId === 'diamond') {
+      divisions = [
+        { id: '1v1', name: '1v1', entryFeeLabel: 'Entry 100 coins', rewardsLabel: 'Winner 160 coins' },
+        { id: '2v2', name: '2v2', entryFeeLabel: 'Entry 50 coins/player', rewardsLabel: 'Winning team 80 coins each' },
+        { id: '3v3', name: '3v3', entryFeeLabel: 'Entry 50 coins/player', rewardsLabel: '10 coins/kill; MVP +80 coins' },
+        { id: '4v4', name: '4v4', entryFeeLabel: 'Entry 50 coins/player', rewardsLabel: '10 coins/kill; MVP +80 coins' }
+      ];
+    } else if (leagueId === 'br') {
+      divisions = [
+        { id: '4v4', name: 'BR', entryFeeLabel: 'Pre-book only (weekends)', rewardsLabel: 'Rewards vary by event' }
+      ];
+    }
+    return of(divisions).pipe(delay(200));
   }
 }

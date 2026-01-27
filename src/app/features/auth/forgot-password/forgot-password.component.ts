@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -47,11 +48,30 @@ import { MatIconModule } from '@angular/material/icon';
             </mat-form-field>
             
             <div class="form-actions">
+              <button type="button" mat-stroked-button class="secondary-btn" (click)="onSendOtp()">
+                Send OTP
+              </button>
+            </div>
+
+            <mat-form-field appearance="outline">
+              <mat-label>OTP</mat-label>
+              <input matInput type="text" formControlName="otp">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>New Password</mat-label>
+              <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="newPassword">
+              <button type="button" matSuffix mat-icon-button (click)="hidePassword = !hidePassword">
+                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </mat-form-field>
+
+            <div class="form-actions">
               <button type="submit" 
                       mat-raised-button 
                       class="primary-btn"
                       [disabled]="forgotPasswordForm.invalid">
-                Send Reset Link
+                Reset Password
               </button>
               
               <a routerLink="/auth/login" class="back-to-login">
@@ -156,17 +176,40 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class ForgotPasswordComponent {
   forgotPasswordForm: FormGroup;
+  hidePassword = true;
+  statusMessage = '';
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private authService: AuthService) {
     this.forgotPasswordForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [Validators.required, Validators.email]],
+      otp: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
   onSubmit() {
     if (this.forgotPasswordForm.valid) {
-      // Handle forgot password logic
-      console.log('Forgot password request:', this.forgotPasswordForm.value);
+      const { email, otp, newPassword } = this.forgotPasswordForm.value;
+      this.authService.verifyOtp({ email, otp }).subscribe(res => {
+        if (res.success) {
+          this.authService.resetPassword('mock-token', newPassword).subscribe(() => {
+            this.statusMessage = 'Password reset successful.';
+          });
+        } else {
+          this.statusMessage = 'Invalid OTP.';
+        }
+      });
+    }
+  }
+
+  onSendOtp() {
+    const emailCtrl = this.forgotPasswordForm.get('email');
+    if (emailCtrl?.valid) {
+      this.authService.sendOtp(emailCtrl.value).subscribe(() => {
+        this.statusMessage = 'OTP sent to your email.';
+      });
+    } else {
+      this.statusMessage = 'Please enter a valid email to receive OTP.';
     }
   }
 }

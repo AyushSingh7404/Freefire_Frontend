@@ -279,7 +279,15 @@ import { loadLeagues } from '../../store/league/league.actions';
       }
       
       .hero-text h1 {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
+      }
+      
+      .hero-section {
+        padding: 1rem;
+      }
+      
+      .hero-image img {
+        height: 220px;
       }
       
       .leagues-grid {
@@ -287,7 +295,11 @@ import { loadLeagues } from '../../store/league/league.actions';
       }
       
       .features-grid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+      
+      .section-header h2 {
+        font-size: 2rem;
       }
     }
   `]

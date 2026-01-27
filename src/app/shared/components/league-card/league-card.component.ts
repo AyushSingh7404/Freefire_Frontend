@@ -62,16 +62,20 @@ import { League } from '../../../core/models/league.model';
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     }
     
+    .league-card.league-silver {
+      border-color: rgba(192, 192, 192, 0.3);
+    }
+    
     .league-card.league-gold {
       border-color: rgba(255, 215, 0, 0.3);
     }
     
-    .league-card.league-platinum {
-      border-color: rgba(192, 192, 192, 0.3);
-    }
-    
     .league-card.league-diamond {
       border-color: rgba(185, 242, 255, 0.3);
+    }
+    
+    .league-card.league-br {
+      border-color: rgba(255, 107, 53, 0.4);
     }
     
     .league-image {

@@ -35,6 +35,10 @@ import { Room } from '../../../core/models/league.model';
             <mat-icon>monetization_on</mat-icon>
             <span>{{ room.entryFee }} coins</span>
           </div>
+          <div class="info-item">
+            <mat-icon>groups</mat-icon>
+            <span>{{ room.division }}</span>
+          </div>
           
           <div class="info-item">
             <mat-icon>schedule</mat-icon>

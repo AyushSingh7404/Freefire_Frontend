@@ -34,6 +34,16 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/leaderboard/leaderboard.component').then(m => m.LeaderboardComponent)
   },
+  {
+    path: 'history',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/history/history.component').then(m => m.HistoryComponent)
+  },
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin.component').then(m => m.AdminComponent)
+  },
   
   {
     path: '**',
