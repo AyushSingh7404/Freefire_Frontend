@@ -11,25 +11,13 @@ import { Division } from '../../../core/models/league.model';
   imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
   template: `
     <mat-card class="division-tile">
-      <div class="division-header">
-        <h3>{{ division.name }}</h3>
+      <div class="thumb"></div>
+      <div class="title">{{ division.name }}</div>
+      <div class="meta">
+        <div class="left">{{ division.entryFeeLabel }}</div>
+        <div class="right">{{ division.rewardsLabel }}</div>
       </div>
-      <div class="division-body">
-        <div class="line">
-          <mat-icon>monetization_on</mat-icon>
-          <span>{{ division.entryFeeLabel }}</span>
-        </div>
-        <div class="line">
-          <mat-icon>emoji_events</mat-icon>
-          <span>{{ division.rewardsLabel }}</span>
-        </div>
-      </div>
-      <div class="division-actions">
-        <button mat-raised-button class="join-btn" (click)="onSelect()">
-          <mat-icon>play_arrow</mat-icon>
-          Select
-        </button>
-      </div>
+      <button mat-raised-button class="join-btn" (click)="onSelect()">SELECT</button>
     </mat-card>
   `,
   styles: [`
@@ -40,32 +28,42 @@ import { Division } from '../../../core/models/league.model';
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: white;
       transition: all 0.3s ease;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .division-tile:hover {
       transform: translateY(-5px);
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
     }
-    .division-header h3 {
-      margin: 0;
-      color: #ff6b35;
-      font-weight: bold;
-    }
-    .division-body {
-      display: grid;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    .line {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: rgba(255, 255, 255, 0.85);
-    }
-    .division-actions {
-      margin-top: 0.75rem;
-    }
-    .join-btn {
+    .thumb {
       width: 100%;
+      height: 100px;
+      border-radius: 12px;
+      background: radial-gradient(ellipse at center, rgba(255, 107, 53, 0.35), rgba(25,25,55,0.6) 60%), 
+                  linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .title {
+      text-align: center;
+      font-weight: 700;
+      color: #ff6b35;
+      font-size: 1.25rem;
+      margin-top: 2px;
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: center;
+      color: rgba(255,255,255,0.9);
+    }
+    .left { text-align: left; }
+    .right { text-align: right; }
+    .join-btn {
+      width: 160px;
+      align-self: center;
       background: linear-gradient(45deg, #ff6b35, #f7931e);
       color: white;
       border-radius: 25px;

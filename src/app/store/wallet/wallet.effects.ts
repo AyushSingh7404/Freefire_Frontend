@@ -56,6 +56,18 @@ export class WalletEffects {
     )
   );
 
+  deductCoins$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(WalletActions.deductCoins),
+      exhaustMap(({ amount }) =>
+        this.walletService.deductCoins(amount).pipe(
+          map(() => WalletActions.deductCoinsSuccess({ amount })),
+          catchError(error => of(WalletActions.deductCoinsFailure({ error: error.message })))
+        )
+      )
+    )
+  );
+
   constructor(
     private actions$: Actions,
     private walletService: WalletService

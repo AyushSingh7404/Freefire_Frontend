@@ -32,16 +32,13 @@ import { Room } from '../../../core/models/league.model';
       <mat-card-content>
         <div class="room-info">
           <div class="info-item">
-            <mat-icon>monetization_on</mat-icon>
             <span>{{ room.entryFee }} coins</span>
           </div>
           <div class="info-item">
-            <mat-icon>groups</mat-icon>
             <span>{{ room.division }}</span>
           </div>
           
           <div class="info-item">
-            <mat-icon>schedule</mat-icon>
             <span>{{ room.startsAt | date:'short' }}</span>
           </div>
         </div>
@@ -68,7 +65,6 @@ import { Room } from '../../../core/models/league.model';
                 [routerLink]="['/room', room.id]"
                 class="join-btn"
                 [disabled]="room.status === 'closed' || room.currentPlayers >= room.maxPlayers">
-          <mat-icon>{{ room.status === 'closed' ? 'lock' : 'play_arrow' }}</mat-icon>
           {{ getButtonText() }}
         </button>
       </mat-card-actions>

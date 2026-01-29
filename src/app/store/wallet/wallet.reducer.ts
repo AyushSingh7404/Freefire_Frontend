@@ -38,6 +38,25 @@ export const walletReducer = createReducer(
     ...state,
     loading: false
   })),
+  on(WalletActions.deductCoins, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(WalletActions.deductCoinsSuccess, (state, { amount }) => ({
+    ...state,
+    loading: false,
+    wallet: state.wallet ? { 
+      ...state.wallet, 
+      balance: Math.max(0, state.wallet.balance - amount),
+      updatedAt: new Date()
+    } : state.wallet
+  })),
+  on(WalletActions.deductCoinsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
   on(WalletActions.loadWalletFailure, WalletActions.loadTransactionsFailure,
      WalletActions.processPaymentFailure, WalletActions.redeemCodeFailure, 
      (state, { error }) => ({

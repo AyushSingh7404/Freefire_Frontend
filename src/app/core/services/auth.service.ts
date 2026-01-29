@@ -23,7 +23,10 @@ export class AuthService {
     id: '1',
     username: 'TestPlayer',
     email: 'test@example.com',
+    age: 20,
     freeFireId: '123456789',
+    freeFireName: 'TestFF',
+    rank: 'Diamond',
     avatar: 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100',
     isAdmin: false,
     createdAt: new Date(),
@@ -41,7 +44,14 @@ export class AuthService {
 
   register(userData: RegisterRequest): Observable<AuthResponse> {
     return of({
-      user: { ...this.mockUser, username: userData.username, email: userData.email },
+      user: { 
+        ...this.mockUser, 
+        username: userData.username, 
+        email: userData.email,
+        age: userData.age,
+        freeFireId: userData.freeFireId || this.mockUser.freeFireId,
+        freeFireName: userData.freeFireName || this.mockUser.freeFireName
+      },
       token: 'mock-jwt-token',
       refreshToken: 'mock-refresh-token'
     }).pipe(delay(1000));

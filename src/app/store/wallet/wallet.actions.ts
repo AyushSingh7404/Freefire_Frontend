@@ -53,3 +53,18 @@ export const redeemCodeFailure = createAction(
   '[Wallet] Redeem Code Failure',
   props<{ error: string }>()
 );
+
+export const deductCoins = createAction(
+  '[Wallet] Deduct Coins',
+  props<{ amount: number; reason?: string }>()
+);
+
+export const deductCoinsSuccess = createAction(
+  '[Wallet] Deduct Coins Success',
+  props<{ amount: number }>()
+);
+
+export const deductCoinsFailure = createAction(
+  '[Wallet] Deduct Coins Failure',
+  props<{ error: string }>()
+);

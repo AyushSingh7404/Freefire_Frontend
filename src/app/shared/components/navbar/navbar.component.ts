@@ -22,42 +22,21 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
     RouterModule,
     MatToolbarModule,
     MatButtonModule,
-    MatMenuModule,
     MatIconModule,
     LucideAngularModule
   ],
   template: `
     <mat-toolbar class="navbar">
       <div class="navbar-content">
-        <mat-menu #userMenu="matMenu">
-          <button mat-menu-item routerLink="/profile">
-            <mat-icon>person</mat-icon>
-            <span>Profile</span>
-          </button>
-          <button mat-menu-item routerLink="/wallet">
-            <mat-icon>account_balance_wallet</mat-icon>
-            <span>Wallet</span>
-          </button>
-          <div *ngIf="(currentUser$ | async)?.isAdmin">
-            <button mat-menu-item routerLink="/admin">
-              <mat-icon>admin_panel_settings</mat-icon>
-              <span>Admin Panel</span>
-            </button>
-          </div>
-          <button mat-menu-item (click)="onLogout()">
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </button>
-        </mat-menu>
-        <div class="left-cluster">
+        <div class="left-cluster" *ngIf="isAuthenticated$ | async">
           <div class="medal-icon">
-            <img src="/assets/medals/ruby.png" alt="Rank" />
+            <img src="/assets/navbar/Diamond_rank.png" alt="Rank" />
           </div>
-          <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-trigger">
+          <button mat-button (click)="goToProfile()" class="user-menu-trigger">
             <lucide-icon name="user" class="icon"></lucide-icon>
             <span>{{ (currentUser$ | async)?.username || 'Guest' }}</span>
           </button>
-          <div class="wallet-balance" routerLink="/wallet">
+          <div class="wallet-balance" (click)="openCoinShop()">
             <lucide-icon name="coins" class="icon"></lucide-icon>
             <span>{{ walletBalance$ | async | number:'1.0-0' }}</span>
             <lucide-icon name="plus" class="icon"></lucide-icon>
@@ -67,8 +46,8 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
         <div class="brand" routerLink="/">
           <h2>Firesports</h2>
         </div>
-        
-        <div class="center-actions hide-mobile">
+
+        <div class="center-actions hide-mobile" *ngIf="isAuthenticated$ | async">
           <a class="icon-link" routerLink="/leaderboard" routerLinkActive="active">
             <lucide-icon name="trophy" class="icon"></lucide-icon>
           </a>
@@ -89,9 +68,49 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
             </button>
           </ng-template>
           
-          <button mat-icon-button class="hamburger">
+          <button mat-icon-button class="hamburger" (click)="toggleSidebar()">
             <lucide-icon name="menu" class="icon"></lucide-icon>
           </button>
+        </div>
+      </div>
+      
+      <div class="overlay" *ngIf="sidebarOpen" (click)="closeOverlays()">
+        <div class="sidebar" (click)="$event.stopPropagation()">
+          <div class="sidebar-header">
+            <span>Menu</span>
+          </div>
+          <button class="sidebar-item" (click)="goToProfile()">
+            <lucide-icon name="user" class="icon"></lucide-icon>
+            <span>Profile</span>
+          </button>
+          <button class="sidebar-item" (click)="openHelp()">
+            <lucide-icon name="history" class="icon"></lucide-icon>
+            <span>Help & Support</span>
+          </button>
+          <button class="sidebar-item" (click)="openTerms()">
+            <lucide-icon name="history" class="icon"></lucide-icon>
+            <span>Terms & Conditions</span>
+          </button>
+          <div class="sidebar-spacer"></div>
+          <button class="sidebar-item danger" (click)="onLogout()">
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="overlay" *ngIf="coinShopOpen" (click)="closeOverlays()">
+        <div class="coin-shop" (click)="$event.stopPropagation()">
+          <h3>Buy Coins</h3>
+          <div class="packages">
+            <div class="package" *ngFor="let p of coinPackages">
+              <div class="amount">
+                <lucide-icon name="coins" class="icon"></lucide-icon>
+                <span>{{ p.amount }}</span>
+              </div>
+              <div class="price">₹{{ p.price }}</div>
+              <button class="buy-btn">Buy</button>
+            </div>
+          </div>
         </div>
       </div>
     </mat-toolbar>
@@ -121,13 +140,14 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
     
     .brand h2 { color: #ff6b35; margin: 0; cursor: pointer; font-weight: bold; }
     
-    .left-cluster { display: flex; align-items: center; gap: 0.75rem; }
+    .left-cluster { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
     .medal-icon img { width: 36px; height: 36px; }
     
     .navbar-actions {
       display: flex;
       align-items: center;
       gap: 1rem;
+      margin-left: auto;
     }
     
     .user-section {
@@ -172,23 +192,27 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
         height: 64px;
       }
       .navbar-content {
-        padding: 0 1rem;
+        padding: 0 0.75rem;
         gap: 0.5rem;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
       }
       .brand h2 {
         font-size: 1.25rem;
       }
       .center-actions { display: none; }
-      .medal-icon { display: none; }
+      .medal-icon img { width: 24px; height: 24px; }
       .wallet-balance {
-        padding: 0.25rem 0.75rem;
+        padding: 0.25rem 0.5rem;
+        height: 28px;
+        border-radius: 18px;
       }
       .wallet-balance span {
         display: none;
       }
       .user-menu-trigger {
         padding: 0.25rem 0.5rem;
+        height: 28px;
+        border-radius: 18px;
       }
       .user-menu-trigger span {
         display: none;
@@ -200,15 +224,110 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
       .auth-btn .mat-icon {
         margin: 0;
       }
+      .navbar-actions {
+        margin-left: 0;
+      }
     }
     .icon { width: 20px; height: 20px; color: white; }
     .icon-link { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 20px; background: rgba(255,255,255,0.08); }
+    
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,25,0.72);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      z-index: 1100;
+    }
+    .sidebar {
+      width: 280px;
+      height: 100%;
+      background: #12122b;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 0.5rem;
+    }
+    .sidebar-header { color: white; font-weight: 600; margin-bottom: 0.5rem; }
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: white;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+    }
+    .sidebar-item.danger {
+      color: #ff4d4f;
+      border-color: rgba(255,77,79,0.4);
+      background: rgba(255,77,79,0.1);
+      margin-top: auto;
+    }
+    .sidebar-spacer { flex: 1 1 auto; }
+    
+    .coin-shop {
+      width: 720px;
+      max-width: 95vw;
+      margin: 80px auto 2rem;
+      background: #12122b;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      color: white;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+    }
+    .packages {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .package {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .package .amount { display: flex; align-items: center; gap: 0.5rem; }
+    .package .price { font-weight: 600; }
+    .buy-btn {
+      background: linear-gradient(45deg, #ff6b35, #f7931e);
+      color: white;
+      border-radius: 10px;
+      padding: 0.4rem 0.75rem;
+      border: none;
+      cursor: pointer;
+    }
+    @media (max-width: 480px) {
+      .packages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .coin-shop { margin: 64px auto 1rem; }
+    }
   `]
 })
 export class NavbarComponent implements OnInit {
   currentUser$: Observable<User | null>;
   isAuthenticated$: Observable<boolean>;
   walletBalance$: Observable<number>;
+  sidebarOpen = false;
+  coinShopOpen = false;
+  coinPackages = [
+    { amount: 100, price: 80 },
+    { amount: 310, price: 250 },
+    { amount: 520, price: 400 },
+    { amount: 1060, price: 800 },
+    { amount: 2180, price: 1600 },
+    { amount: 5600, price: 4000 }
+  ];
 
   constructor(
     private store: Store,
@@ -223,7 +342,33 @@ export class NavbarComponent implements OnInit {
     this.store.dispatch(loadWallet());
   }
 
+  goToProfile() {
+    this.router.navigate(['/profile']);
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  openCoinShop() {
+    this.coinShopOpen = true;
+  }
+
+  closeOverlays() {
+    this.sidebarOpen = false;
+    this.coinShopOpen = false;
+  }
+
+  openHelp() {
+    this.sidebarOpen = false;
+  }
+
+  openTerms() {
+    this.sidebarOpen = false;
+  }
+
   onLogout() {
+    this.closeOverlays();
     this.store.dispatch(logout());
     this.router.navigate(['/']);
   }

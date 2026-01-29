@@ -38,83 +38,100 @@ import { AuthService } from '../../../core/services/auth.service';
         
         <mat-card-content>
           <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline">
-              <mat-label>Username</mat-label>
-              <input matInput 
-                     type="text" 
-                     formControlName="username"
-                     autocomplete="username">
-              <mat-icon matSuffix>person</mat-icon>
-              <mat-error *ngIf="registerForm.get('username')?.hasError('required')">
+            <div class="info-banner">
+              These details are important. Fill them correctly — you will not be able to join any room if your Free Fire UID or in‑game name are incorrect.
+            </div>
+            <div class="form-field">
+              <label for="age">Age</label>
+              <input id="age" type="number" min="16" class="text-input" placeholder="Enter your age" formControlName="age" autocomplete="off">
+              <div class="field-error" *ngIf="registerForm.get('age')?.hasError('required')">
+                Age is required
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('age')?.hasError('min')">
+                Age must be more than 15
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="username">Username</label>
+              <input id="username" type="text" class="text-input" placeholder="Enter your username" formControlName="username" autocomplete="username">
+              <div class="field-error" *ngIf="registerForm.get('username')?.hasError('required')">
                 Username is required
-              </mat-error>
-              <mat-error *ngIf="registerForm.get('username')?.hasError('minlength')">
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('username')?.hasError('minlength')">
                 Username must be at least 3 characters
-              </mat-error>
-            </mat-form-field>
+              </div>
+            </div>
             
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput 
-                     type="email" 
-                     formControlName="email"
-                     autocomplete="email">
-              <mat-icon matSuffix>email</mat-icon>
-              <mat-error *ngIf="registerForm.get('email')?.hasError('required')">
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" type="email" class="text-input" placeholder="Enter your email" formControlName="email" autocomplete="email">
+              <div class="field-error" *ngIf="registerForm.get('email')?.hasError('required')">
                 Email is required
-              </mat-error>
-              <mat-error *ngIf="registerForm.get('email')?.hasError('email')">
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('email')?.hasError('email')">
                 Please enter a valid email
-              </mat-error>
-            </mat-form-field>
+              </div>
+            </div>
             
-            <mat-form-field appearance="outline">
-              <mat-label>Password</mat-label>
-              <input matInput 
-                     [type]="hidePassword ? 'password' : 'text'" 
-                     formControlName="password"
-                     autocomplete="new-password">
-              <button type="button" 
-                      matSuffix 
-                      mat-icon-button
-                      (click)="hidePassword = !hidePassword">
-                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              <mat-error *ngIf="registerForm.get('password')?.hasError('required')">
+            <div class="form-field">
+              <label for="freeFireId">Free Fire UID</label>
+              <input id="freeFireId" type="text" class="text-input" placeholder="Enter your Free Fire UID" formControlName="freeFireId" autocomplete="off">
+              <div class="field-error" *ngIf="registerForm.get('freeFireId')?.hasError('required')">
+                Free Fire UID is required
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('freeFireId')?.hasError('pattern')">
+                UID must be 6–12 digits
+              </div>
+            </div>
+            
+            <div class="form-field">
+              <label for="freeFireName">Free Fire Username</label>
+              <input id="freeFireName" type="text" class="text-input" placeholder="Enter your in-game name" formControlName="freeFireName" autocomplete="off">
+              <div class="field-error" *ngIf="registerForm.get('freeFireName')?.hasError('required')">
+                Free Fire username is required
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('freeFireName')?.hasError('minlength')">
+                Username must be at least 3 characters
+              </div>
+            </div>
+            
+            <div class="form-field">
+              <label for="password">Password</label>
+              <div class="input-with-action">
+                <input id="password" [type]="hidePassword ? 'password' : 'text'" class="text-input" placeholder="Enter password" formControlName="password" autocomplete="new-password">
+                <button type="button" mat-icon-button (click)="hidePassword = !hidePassword">
+                </button>
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('password')?.hasError('required')">
                 Password is required
-              </mat-error>
-              <mat-error *ngIf="registerForm.get('password')?.hasError('minlength')">
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('password')?.hasError('minlength')">
                 Password must be at least 6 characters
-              </mat-error>
-            </mat-form-field>
+              </div>
+            </div>
             
-            <mat-form-field appearance="outline">
-              <mat-label>Confirm Password</mat-label>
-              <input matInput 
-                     [type]="hideConfirmPassword ? 'password' : 'text'" 
-                     formControlName="confirmPassword"
-                     autocomplete="new-password">
-              <button type="button" 
-                      matSuffix 
-                      mat-icon-button
-                      (click)="hideConfirmPassword = !hideConfirmPassword">
-                <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              <mat-error *ngIf="registerForm.get('confirmPassword')?.hasError('required')">
+            <div class="form-field">
+              <label for="confirmPassword">Confirm Password</label>
+              <div class="input-with-action">
+                <input id="confirmPassword" [type]="hideConfirmPassword ? 'password' : 'text'" class="text-input" placeholder="Re-enter password" formControlName="confirmPassword" autocomplete="new-password">
+                <button type="button" mat-icon-button (click)="hideConfirmPassword = !hideConfirmPassword">
+                </button>
+              </div>
+              <div class="field-error" *ngIf="registerForm.get('confirmPassword')?.hasError('required')">
                 Please confirm your password
-              </mat-error>
-              <mat-error *ngIf="registerForm.hasError('passwordMismatch') && !registerForm.get('confirmPassword')?.hasError('required')">
+              </div>
+              <div class="field-error" *ngIf="registerForm.hasError('passwordMismatch') && !registerForm.get('confirmPassword')?.hasError('required')">
                 Passwords do not match
-              </mat-error>
-            </mat-form-field>
+              </div>
+            </div>
             
-            <mat-form-field appearance="outline">
-              <mat-label>OTP</mat-label>
-              <input matInput type="text" formControlName="otp" autocomplete="one-time-code">
-              <mat-error *ngIf="registerForm.get('otp')?.hasError('required') && otpRequired">
+            <div class="form-field">
+              <label for="otp">OTP</label>
+              <input id="otp" type="text" class="text-input" placeholder="Enter 6-digit OTP" formControlName="otp" autocomplete="one-time-code">
+              <div class="field-error" *ngIf="registerForm.get('otp')?.hasError('required') && otpRequired">
                 OTP is required
-              </mat-error>
-            </mat-form-field>
+              </div>
+            </div>
             <div class="form-actions">
               <button type="button" 
                       mat-stroked-button 
@@ -186,27 +203,49 @@ import { AuthService } from '../../../core/services/auth.service';
     .mat-mdc-card-content {
       padding-top: 2rem;
     }
-    
-    .mat-mdc-form-field {
-      width: 100%;
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
       margin-bottom: 1rem;
     }
-    
-    ::ng-deep .mat-mdc-text-field-wrapper {
-      background-color: rgba(255, 255, 255, 0.05);
+    .form-field label {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+    }
+    .text-input {
+      width: 100%;
+      padding: 12px 14px;
       border-radius: 10px;
-    }
-    
-    ::ng-deep .mat-mdc-form-field-input-control {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background-color: rgba(255, 255, 255, 0.05);
       color: white;
+      outline: none;
     }
-    
-    ::ng-deep .mat-mdc-form-field-label {
-      color: rgba(255, 255, 255, 0.7);
+    .text-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
     }
-    
-    ::ng-deep .mat-mdc-outline {
-      color: rgba(255, 255, 255, 0.3);
+    .text-input:focus {
+      border-color: #ff6b35;
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25);
+    }
+    .input-with-action {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .info-banner {
+      background: rgba(255, 217, 0, 0.12);
+      border: 1px solid rgba(255, 217, 0, 0.35);
+      color: #ffd900;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .field-error {
+      color: #f44336;
+      font-size: 0.85rem;
     }
     
     .form-actions {
@@ -271,8 +310,11 @@ export class RegisterComponent implements OnInit {
     private authService: AuthService
   ) {
     this.registerForm = this.fb.group({
+      age: ['', [Validators.required, Validators.min(16)]],
       username: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
+      freeFireId: ['', [Validators.required, Validators.pattern(/^[0-9]{6,12}$/)]],
+      freeFireName: ['', [Validators.required, Validators.minLength(3)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]],
       otp: ['']
@@ -297,7 +339,11 @@ export class RegisterComponent implements OnInit {
 
   onSubmit() {
     if (this.registerForm.valid) {
-      const { email, otp } = this.registerForm.value;
+      const { email, otp, age } = this.registerForm.value;
+      if (age < 16) {
+        this.statusMessage = 'Age must be more than 15.';
+        return;
+      }
       if (!otp) {
         this.otpRequired = true;
         this.statusMessage = 'Please enter the OTP sent to your email.';

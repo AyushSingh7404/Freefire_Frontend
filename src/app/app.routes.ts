@@ -30,6 +30,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/wallet/wallet.component').then(m => m.WalletComponent)
   },
   {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
+  },
+  {
     path: 'leaderboard',
     canActivate: [authGuard],
     loadComponent: () => import('./features/leaderboard/leaderboard.component').then(m => m.LeaderboardComponent)

@@ -37,7 +37,6 @@ import { loadLeagues } from '../../store/league/league.actions';
             </p>
             <div class="hero-actions" *ngIf="!(isAuthenticated$ | async)">
               <button mat-raised-button routerLink="/auth/register" class="primary-btn">
-                <mat-icon>play_arrow</mat-icon>
                 Start Playing
               </button>
               <button mat-button routerLink="/auth/login" class="secondary-btn">
@@ -81,25 +80,21 @@ import { loadLeagues } from '../../store/league/league.actions';
         
         <div class="features-grid">
           <div class="feature-card">
-            <mat-icon>emoji_events</mat-icon>
             <h3>Competitive Tournaments</h3>
             <p>Join daily tournaments with real prizes and climb the leaderboards</p>
           </div>
           
           <div class="feature-card">
-            <mat-icon>security</mat-icon>
             <h3>Secure Payments</h3>
             <p>Safe and encrypted transactions with multiple payment options</p>
           </div>
           
           <div class="feature-card">
-            <mat-icon>speed</mat-icon>
             <h3>Real-time Updates</h3>
             <p>Live match updates and instant notifications for all your games</p>
           </div>
           
           <div class="feature-card">
-            <mat-icon>people</mat-icon>
             <h3>Community Driven</h3>
             <p>Connect with fellow gamers and build your esports network</p>
           </div>

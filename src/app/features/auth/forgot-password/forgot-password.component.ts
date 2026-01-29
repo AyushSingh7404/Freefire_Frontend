@@ -32,20 +32,16 @@ import { AuthService } from '../../../core/services/auth.service';
         
         <mat-card-content>
           <form [formGroup]="forgotPasswordForm" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput 
-                     type="email" 
-                     formControlName="email"
-                     autocomplete="email">
-              <mat-icon matSuffix>email</mat-icon>
-              <mat-error *ngIf="forgotPasswordForm.get('email')?.hasError('required')">
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" type="email" class="text-input" placeholder="Enter your email" formControlName="email" autocomplete="email">
+              <div class="field-error" *ngIf="forgotPasswordForm.get('email')?.hasError('required')">
                 Email is required
-              </mat-error>
-              <mat-error *ngIf="forgotPasswordForm.get('email')?.hasError('email')">
+              </div>
+              <div class="field-error" *ngIf="forgotPasswordForm.get('email')?.hasError('email')">
                 Please enter a valid email
-              </mat-error>
-            </mat-form-field>
+              </div>
+            </div>
             
             <div class="form-actions">
               <button type="button" mat-stroked-button class="secondary-btn" (click)="onSendOtp()">
@@ -53,18 +49,19 @@ import { AuthService } from '../../../core/services/auth.service';
               </button>
             </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>OTP</mat-label>
-              <input matInput type="text" formControlName="otp">
-            </mat-form-field>
+            <div class="form-field">
+              <label for="otp">OTP</label>
+              <input id="otp" type="text" class="text-input" placeholder="Enter 6-digit OTP" formControlName="otp">
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>New Password</mat-label>
-              <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="newPassword">
-              <button type="button" matSuffix mat-icon-button (click)="hidePassword = !hidePassword">
-                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-            </mat-form-field>
+            <div class="form-field">
+              <label for="newPassword">New Password</label>
+              <div class="input-with-action">
+                <input id="newPassword" [type]="hidePassword ? 'password' : 'text'" class="text-input" placeholder="Enter new password" formControlName="newPassword">
+                <button type="button" mat-icon-button (click)="hidePassword = !hidePassword">
+                </button>
+              </div>
+            </div>
 
             <div class="form-actions">
               <button type="submit" 
@@ -123,26 +120,40 @@ import { AuthService } from '../../../core/services/auth.service';
       padding-top: 2rem;
     }
     
-    .mat-mdc-form-field {
-      width: 100%;
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
       margin-bottom: 1rem;
     }
-    
-    ::ng-deep .mat-mdc-text-field-wrapper {
-      background-color: rgba(255, 255, 255, 0.05);
+    .form-field label {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+    }
+    .text-input {
+      width: 100%;
+      padding: 12px 14px;
       border-radius: 10px;
-    }
-    
-    ::ng-deep .mat-mdc-form-field-input-control {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background-color: rgba(255, 255, 255, 0.05);
       color: white;
+      outline: none;
     }
-    
-    ::ng-deep .mat-mdc-form-field-label {
-      color: rgba(255, 255, 255, 0.7);
+    .text-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
     }
-    
-    ::ng-deep .mat-mdc-outline {
-      color: rgba(255, 255, 255, 0.3);
+    .text-input:focus {
+      border-color: #ff6b35;
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25);
+    }
+    .input-with-action {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .field-error {
+      color: #f44336;
+      font-size: 0.85rem;
     }
     
     .form-actions {

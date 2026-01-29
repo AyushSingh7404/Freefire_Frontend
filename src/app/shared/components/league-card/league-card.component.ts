@@ -25,11 +25,9 @@ import { League } from '../../../core/models/league.model';
         
         <div class="league-stats">
           <div class="stat">
-            <mat-icon>monetization_on</mat-icon>
             <span>{{ league.entryFee }} coins</span>
           </div>
           <div class="stat">
-            <mat-icon>people</mat-icon>
             <span>Max {{ league.maxPlayers }}</span>
           </div>
         </div>
@@ -40,7 +38,6 @@ import { League } from '../../../core/models/league.model';
                 [routerLink]="['/league', league.id]"
                 class="join-btn"
                 [disabled]="!league.isActive">
-          <mat-icon>play_arrow</mat-icon>
           Join League
         </button>
       </mat-card-actions>
