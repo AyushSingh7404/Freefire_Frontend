@@ -104,12 +104,12 @@ import { loadLeagues } from '../../store/league/league.actions';
   `,
   styles: [`
     .home-container {
-      min-height: 100vh;
+      min-height: 50vh;
       color: white;
     }
     
     .hero-section {
-      min-height: 100vh;
+      min-height: 50vh;
       display: flex;
       align-items: center;
       padding: 2rem;

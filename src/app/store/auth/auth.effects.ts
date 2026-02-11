@@ -36,7 +36,11 @@ export class AuthEffects {
   loginSuccess$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.loginSuccess),
-      tap(() => this.router.navigate(['/']))
+      tap(({ response }) => {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('refreshToken', response.refreshToken);
+        this.router.navigate(['/']);
+      })
     ),
     { dispatch: false }
   );
@@ -44,7 +48,22 @@ export class AuthEffects {
   registerSuccess$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.registerSuccess),
-      tap(() => this.router.navigate(['/']))
+      tap(({ response }) => {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('refreshToken', response.refreshToken);
+        this.router.navigate(['/']);
+      })
+    ),
+    { dispatch: false }
+  );
+
+  logout$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.logout),
+      tap(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+      })
     ),
     { dispatch: false }
   );

@@ -137,24 +137,24 @@ export class LeagueService {
     let divisions: Division[] = [];
     if (leagueId === 'silver') {
       divisions = [
-        { id: '1v1', name: '1v1', entryFeeLabel: 'Entry 20 coins', rewardsLabel: 'Winner 30 coins' },
-        { id: '2v2', name: '2v2', entryFeeLabel: 'Entry 20 coins/player', rewardsLabel: 'Winning team 30 coins each' },
-        { id: '3v3', name: '3v3', entryFeeLabel: 'Entry 15 coins/player', rewardsLabel: '3 coins/kill; MVP +20 coins' },
-        { id: '4v4', name: '4v4', entryFeeLabel: 'Entry 15 coins/player', rewardsLabel: '3 coins/kill; MVP +20 coins' }
+        { id: '1v1', name: '1v1', entryFeeLabel: '20', rewardsLabel: '30' },
+        { id: '2v2', name: '2v2', entryFeeLabel: '20', rewardsLabel: '30' },
+        { id: '3v3', name: '3v3', entryFeeLabel: '15', rewardsLabel: '3,20' },
+        { id: '4v4', name: '4v4', entryFeeLabel: '15', rewardsLabel: '3,20' }
       ];
     } else if (leagueId === 'gold') {
       divisions = [
-        { id: '1v1', name: '1v1', entryFeeLabel: 'Entry 40 coins', rewardsLabel: 'Winner 60 coins' },
-        { id: '2v2', name: '2v2', entryFeeLabel: 'Entry 30 coins/player', rewardsLabel: 'Winning team 50 coins each' },
-        { id: '3v3', name: '3v3', entryFeeLabel: 'Entry 25 coins/player', rewardsLabel: '5 coins/kill; MVP +40 coins' },
-        { id: '4v4', name: '4v4', entryFeeLabel: 'Entry 25 coins/player', rewardsLabel: '5 coins/kill; MVP +40 coins' }
+        { id: '1v1', name: '1v1', entryFeeLabel: '40', rewardsLabel: '60' },
+        { id: '2v2', name: '2v2', entryFeeLabel: '30', rewardsLabel: '50' },
+        { id: '3v3', name: '3v3', entryFeeLabel: '25', rewardsLabel: '5,40' },
+        { id: '4v4', name: '4v4', entryFeeLabel: '25', rewardsLabel: '5,40' }
       ];
     } else if (leagueId === 'diamond') {
       divisions = [
-        { id: '1v1', name: '1v1', entryFeeLabel: 'Entry 100 coins', rewardsLabel: 'Winner 160 coins' },
-        { id: '2v2', name: '2v2', entryFeeLabel: 'Entry 50 coins/player', rewardsLabel: 'Winning team 80 coins each' },
-        { id: '3v3', name: '3v3', entryFeeLabel: 'Entry 50 coins/player', rewardsLabel: '10 coins/kill; MVP +80 coins' },
-        { id: '4v4', name: '4v4', entryFeeLabel: 'Entry 50 coins/player', rewardsLabel: '10 coins/kill; MVP +80 coins' }
+        { id: '1v1', name: '1v1', entryFeeLabel: '100', rewardsLabel: '160' },
+        { id: '2v2', name: '2v2', entryFeeLabel: '50', rewardsLabel: '80' },
+        { id: '3v3', name: '3v3', entryFeeLabel: '50', rewardsLabel: '10,80' },
+        { id: '4v4', name: '4v4', entryFeeLabel: '50', rewardsLabel: '10,80' }
       ];
     } else if (leagueId === 'br') {
       divisions = [

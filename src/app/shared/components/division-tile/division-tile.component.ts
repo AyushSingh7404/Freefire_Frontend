@@ -3,19 +3,39 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { Division } from '../../../core/models/league.model';
 
 @Component({
   selector: 'app-division-tile',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, LucideAngularModule],
   template: `
     <mat-card class="division-tile">
       <div class="thumb"></div>
       <div class="title">{{ division.name }}</div>
       <div class="meta">
-        <div class="left">{{ division.entryFeeLabel }}</div>
-        <div class="right">{{ division.rewardsLabel }}</div>
+        <div class="labels">
+          <span>Entry:</span>
+          <span class="right">{{ isKillMode ? (killAmount + ' coins/kill;') : 'Winner:' }}</span>
+        </div>
+        <div class="values">
+          <div class="left">
+            <span class="num">{{ entryAmount }}</span>
+            <lucide-icon name="coins" class="coin"></lucide-icon>
+            <span class="extra" *ngIf="entryEach">/each</span>
+          </div>
+          <div class="right" *ngIf="!isKillMode">
+            <span class="num">{{ winnerAmount }}</span>
+            <lucide-icon name="coins" class="coin"></lucide-icon>
+            <span class="extra" *ngIf="winnerEach">/each</span>
+          </div>
+          <div class="right" *ngIf="isKillMode">
+            <span class="mvp">MVP: </span>
+            <span class="num">{{ mvpAmount }}</span>
+            <lucide-icon name="coins" class="coin"></lucide-icon>
+          </div>
+        </div>
       </div>
       <button mat-raised-button class="join-btn" (click)="onSelect()">SELECT</button>
     </mat-card>
@@ -53,14 +73,18 @@ import { Division } from '../../../core/models/league.model';
       margin-top: 2px;
     }
     .meta {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
       color: rgba(255,255,255,0.9);
     }
-    .left { text-align: left; }
-    .right { text-align: right; }
+    .labels { display: grid; grid-template-columns: 1fr 1fr; }
+    .values { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+    .left { text-align: left; display: inline-flex; align-items: center; gap: 6px; }
+    .right { text-align: right; display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+    .coin { width: 16px; height: 16px; color: #f7931e; }
+    .num { font-weight: 700; }
+    .mvp { opacity: 0.9; margin-right: 4px; }
     .join-btn {
       width: 160px;
       align-self: center;
@@ -78,5 +102,37 @@ export class DivisionTileComponent {
 
   onSelect() {
     if (this.select) this.select(this.division);
+  }
+
+  get isKillMode(): boolean {
+    return this.division?.id === '3v3' || this.division?.id === '4v4';
+  }
+
+  get entryAmount(): number {
+    const m = this.division?.entryFeeLabel?.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
+  get entryEach(): boolean {
+    return this.division?.id === '2v2' || this.division?.id === '3v3' || this.division?.id === '4v4';
+  }
+
+  get winnerAmount(): number {
+    const m = this.division?.rewardsLabel?.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
+  get winnerEach(): boolean {
+    return this.division?.id === '2v2';
+  }
+
+  get killAmount(): number {
+    const nums = this.division?.rewardsLabel?.match(/(\d+)/g);
+    return nums && nums.length ? parseInt(nums[0], 10) : 0;
+  }
+
+  get mvpAmount(): number {
+    const nums = this.division?.rewardsLabel?.match(/(\d+)/g);
+    return nums && nums.length > 1 ? parseInt(nums[1], 10) : 0;
   }
 }

@@ -47,16 +47,16 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
           <h2>Firesports</h2>
         </div>
 
-        <div class="center-actions hide-mobile" *ngIf="isAuthenticated$ | async">
-          <a class="icon-link" routerLink="/leaderboard" routerLinkActive="active">
-            <lucide-icon name="trophy" class="icon"></lucide-icon>
-          </a>
-          <a class="icon-link" routerLink="/history" routerLinkActive="active">
-            <lucide-icon name="history" class="icon"></lucide-icon>
-          </a>
-        </div>
         
         <div class="navbar-actions">
+          <div class="right-icons" *ngIf="isAuthenticated$ | async">
+            <a class="icon-link" routerLink="/leaderboard" routerLinkActive="active">
+              <lucide-icon name="trophy" class="icon"></lucide-icon>
+            </a>
+            <a class="icon-link" routerLink="/history" routerLinkActive="active">
+              <lucide-icon name="history" class="icon"></lucide-icon>
+            </a>
+          </div>
           <div *ngIf="isAuthenticated$ | async; else authButtons" class="user-section"></div>
           
           <ng-template #authButtons>
@@ -79,22 +79,35 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
           <div class="sidebar-header">
             <span>Menu</span>
           </div>
-          <button class="sidebar-item" (click)="goToProfile()">
-            <lucide-icon name="user" class="icon"></lucide-icon>
-            <span>Profile</span>
-          </button>
-          <button class="sidebar-item" (click)="openHelp()">
-            <lucide-icon name="history" class="icon"></lucide-icon>
-            <span>Help & Support</span>
-          </button>
-          <button class="sidebar-item" (click)="openTerms()">
-            <lucide-icon name="history" class="icon"></lucide-icon>
-            <span>Terms & Conditions</span>
-          </button>
-          <div class="sidebar-spacer"></div>
-          <button class="sidebar-item danger" (click)="onLogout()">
-            <span>Logout</span>
-          </button>
+          <ng-container *ngIf="isAuthenticated$ | async; else loggedOutMenu">
+            <button class="sidebar-item" (click)="goToProfile()">
+              <lucide-icon name="user" class="icon"></lucide-icon>
+              <span>Profile</span>
+            </button>
+            <button class="sidebar-item" (click)="openHelp()">
+              <lucide-icon name="history" class="icon"></lucide-icon>
+              <span>Help & Support</span>
+            </button>
+            <button class="sidebar-item" (click)="openTerms()">
+              <lucide-icon name="history" class="icon"></lucide-icon>
+              <span>Terms & Conditions</span>
+            </button>
+            <div class="sidebar-spacer"></div>
+            <button class="sidebar-item danger" (click)="onLogout()">
+              <span>Logout</span>
+            </button>
+          </ng-container>
+          <ng-template #loggedOutMenu>
+            <button class="sidebar-item" routerLink="/auth/login" (click)="closeOverlays()">
+              <span>Login</span>
+            </button>
+            <button class="sidebar-item" (click)="openHelp()">
+              <span>Help & Support</span>
+            </button>
+            <button class="sidebar-item" (click)="openTerms()">
+              <span>Terms & Conditions</span>
+            </button>
+          </ng-template>
         </div>
       </div>
       
@@ -149,6 +162,7 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
       gap: 1rem;
       margin-left: auto;
     }
+    .right-icons { display: inline-flex; align-items: center; gap: 0.5rem; }
     
     .user-section {
       display: flex;
@@ -207,7 +221,8 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
         border-radius: 18px;
       }
       .wallet-balance span {
-        display: none;
+        display: inline;
+        font-weight: 600;
       }
       .user-menu-trigger {
         padding: 0.25rem 0.5rem;
@@ -244,7 +259,7 @@ import { loadWallet } from '../../../store/wallet/wallet.actions';
     .sidebar {
       width: 280px;
       height: 100%;
-      background: #12122b;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
       border-left: 1px solid rgba(255,255,255,0.1);
       display: flex;
       flex-direction: column;
