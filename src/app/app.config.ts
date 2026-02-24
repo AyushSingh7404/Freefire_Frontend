@@ -19,30 +19,29 @@ import { WalletEffects } from './store/wallet/wallet.effects';
 import { LeagueEffects } from './store/league/league.effects';
 import { LeaderboardEffects } from './store/leaderboard/leaderboard.effects';
 import { environment } from '../environments/environment';
-import { LucideAngularModule, User as UserIcon, Coins, Plus, Menu, Trophy, History } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  User, Coins, Plus, Menu, Trophy, History, Shield,
+} from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withPreloading(PreloadAllModules)),
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    // Error interceptor runs OUTER (catches 401 from all requests)
+    // Auth interceptor runs INNER (attaches Bearer token)
+    provideHttpClient(withInterceptors([errorInterceptor, authInterceptor])),
     provideAnimationsAsync(),
     importProvidersFrom(BrowserAnimationsModule),
-    importProvidersFrom(LucideAngularModule.pick({ User: UserIcon, Coins, Plus, Menu, Trophy, History })),
+    importProvidersFrom(
+      LucideAngularModule.pick({ User, Coins, Plus, Menu, Trophy, History, Shield })
+    ),
     provideStore({
-      auth: authReducer,
-      wallet: walletReducer,
-      league: leagueReducer,
-      leaderboard: leaderboardReducer
+      auth:        authReducer,
+      wallet:      walletReducer,
+      league:      leagueReducer,
+      leaderboard: leaderboardReducer,
     }),
-    provideEffects([
-      AuthEffects,
-      WalletEffects,
-      LeagueEffects,
-      LeaderboardEffects
-    ]),
-    provideStoreDevtools({
-      maxAge: 25,
-      logOnly: environment.production
-    })
-  ]
+    provideEffects([AuthEffects, WalletEffects, LeagueEffects, LeaderboardEffects]),
+    provideStoreDevtools({ maxAge: 25, logOnly: environment.production }),
+  ],
 };

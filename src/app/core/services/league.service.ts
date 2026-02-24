@@ -1,166 +1,139 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { League, Room, JoinRoomRequest, Division } from '../models/league.model';
+import {
+  League, Room, Division, JoinRoomRequest, JoinRoomResponse,
+  ApiLeague, ApiRoom, ApiDivision, ApiJoinRoomResponse, ApiRoomPlayer, RoomPlayer,
+} from '../models/league.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class LeagueService {
-  private readonly apiUrl = `${environment.apiUrl}/league`;
+  private readonly leaguesBase = `${environment.apiUrl}/leagues`;
+  private readonly roomsBase   = `${environment.apiUrl}/rooms`;
 
   constructor(private http: HttpClient) {}
 
-  private mockLeagues: League[] = [
-    {
-      id: 'silver',
-      name: 'Silver League',
-      tier: 'silver',
-      entryFee: 15,
-      description: 'Perfect for new competitors',
-      maxPlayers: 50,
-      image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg?auto=compress&cs=tinysrgb&w=400',
-      isActive: true
-    },
-    {
-      id: 'gold',
-      name: 'Gold League',
-      tier: 'gold',
-      entryFee: 25,
-      description: 'Mid-tier competition with bigger rewards',
-      maxPlayers: 40,
-      image: 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
-      isActive: true
-    },
-    {
-      id: 'diamond',
-      name: 'Diamond League',
-      tier: 'diamond',
-      entryFee: 50,
-      description: 'Top-tier elite competition',
-      maxPlayers: 30,
-      image: 'https://images.pexels.com/photos/275033/pexels-photo-275033.jpeg?auto=compress&cs=tinysrgb&w=400',
-      isActive: true
-    },
-    {
-      id: 'br',
-      name: 'Battle Royale (BR)',
-      tier: 'br',
-      entryFee: 0,
-      description: 'Weekend special with pre-booking',
-      maxPlayers: 100,
-      image: 'https://images.pexels.com/photos/289445/pexels-photo-289445.jpeg?auto=compress&cs=tinysrgb&w=400',
-      isActive: true
-    }
-  ];
+  // ── Mappers ──────────────────────────────────────────────────────────────
 
-  private mockRooms: Room[] = [
-    {
-      id: '1',
-      leagueId: 'silver',
-      name: 'Silver Room #1',
-      entryFee: 20,
-      division: '1v1',
-      maxPlayers: 50,
-      currentPlayers: 35,
-      status: 'open',
-      roomId: 'SLV001',
-      createdBy: 'admin',
-      createdAt: new Date(),
-      startsAt: new Date(Date.now() + 3600000),
-      players: []
-    },
-    {
-      id: '2',
-      leagueId: 'gold',
-      name: 'Gold Room #1',
-      entryFee: 30,
-      division: '2v2',
-      maxPlayers: 40,
-      currentPlayers: 28,
-      status: 'open',
-      roomId: 'GLD001',
-      createdBy: 'admin',
-      createdAt: new Date(),
-      startsAt: new Date(Date.now() + 5400000),
-      players: []
-    },
-    {
-      id: '3',
-      leagueId: 'diamond',
-      name: 'Diamond Room #1',
-      entryFee: 50,
-      division: '4v4',
-      maxPlayers: 30,
-      currentPlayers: 18,
-      status: 'open',
-      roomId: 'DMN001',
-      createdBy: 'admin',
-      createdAt: new Date(),
-      startsAt: new Date(Date.now() + 7200000),
-      players: []
-    }
-  ];
+  private mapLeague(l: ApiLeague): League {
+    return {
+      id: l.id,
+      name: l.name,
+      tier: l.tier as League['tier'],
+      entryFee: l.entry_fee,
+      description: l.description,
+      maxPlayers: l.max_players,
+      imageUrl: l.image_url,
+      isActive: l.is_active,
+      createdAt: new Date(l.created_at),
+    };
+  }
 
+  private mapPlayer(p: ApiRoomPlayer): RoomPlayer {
+    return {
+      id: p.id,
+      userId: p.user_id,
+      username: p.username,
+      freeFireId: p.free_fire_id,
+      joinedAt: new Date(p.joined_at),
+      position: p.position,
+      kills: p.kills,
+      points: p.points,
+    };
+  }
+
+  private mapRoom(r: ApiRoom): Room {
+    return {
+      id: r.id,
+      leagueId: r.league_id,
+      name: r.name,
+      entryFee: r.entry_fee,
+      division: r.division as Room['division'],
+      maxPlayers: r.max_players,
+      currentPlayers: r.current_players,
+      status: r.status as Room['status'],
+      adminRoomId: r.admin_room_id,
+      startsAt: new Date(r.starts_at),
+      createdAt: new Date(r.created_at),
+      players: (r.players || []).map(p => this.mapPlayer(p)),
+    };
+  }
+
+  // ── Leagues ───────────────────────────────────────────────────────────────
+
+  // GET /leagues
   getLeagues(): Observable<League[]> {
-    return of(this.mockLeagues).pipe(delay(500));
+    return this.http
+      .get<ApiLeague[]>(this.leaguesBase)
+      .pipe(map(list => list.map(l => this.mapLeague(l))));
   }
 
-  getLeague(id: string): Observable<League | undefined> {
-    const league = this.mockLeagues.find(l => l.id === id);
-    return of(league).pipe(delay(500));
+  // GET /leagues/{id}
+  getLeague(id: string): Observable<League> {
+    return this.http
+      .get<ApiLeague>(`${this.leaguesBase}/${id}`)
+      .pipe(map(l => this.mapLeague(l)));
   }
 
-  getRoomsByLeague(leagueId: string): Observable<Room[]> {
-    const rooms = this.mockRooms.filter(r => r.leagueId === leagueId);
-    return of(rooms).pipe(delay(500));
-  }
-
-  getRoom(id: string): Observable<Room | undefined> {
-    const room = this.mockRooms.find(r => r.id === id);
-    return of(room).pipe(delay(500));
-  }
-
-  joinRoom(joinData: JoinRoomRequest): Observable<{ success: boolean; roomId?: string }> {
-    return of({
-      success: true,
-      roomId: 'GLD001'
-    }).pipe(delay(1000));
-  }
-
-  leaveRoom(roomId: string): Observable<{ success: boolean }> {
-    return of({ success: true }).pipe(delay(500));
-  }
-
+  // GET /leagues/{id}/divisions
   getDivisionsForLeague(leagueId: string): Observable<Division[]> {
-    let divisions: Division[] = [];
-    if (leagueId === 'silver') {
-      divisions = [
-        { id: '1v1', name: '1v1', entryFeeLabel: '20', rewardsLabel: '30' },
-        { id: '2v2', name: '2v2', entryFeeLabel: '20', rewardsLabel: '30' },
-        { id: '3v3', name: '3v3', entryFeeLabel: '15', rewardsLabel: '3,20' },
-        { id: '4v4', name: '4v4', entryFeeLabel: '15', rewardsLabel: '3,20' }
-      ];
-    } else if (leagueId === 'gold') {
-      divisions = [
-        { id: '1v1', name: '1v1', entryFeeLabel: '40', rewardsLabel: '60' },
-        { id: '2v2', name: '2v2', entryFeeLabel: '30', rewardsLabel: '50' },
-        { id: '3v3', name: '3v3', entryFeeLabel: '25', rewardsLabel: '5,40' },
-        { id: '4v4', name: '4v4', entryFeeLabel: '25', rewardsLabel: '5,40' }
-      ];
-    } else if (leagueId === 'diamond') {
-      divisions = [
-        { id: '1v1', name: '1v1', entryFeeLabel: '100', rewardsLabel: '160' },
-        { id: '2v2', name: '2v2', entryFeeLabel: '50', rewardsLabel: '80' },
-        { id: '3v3', name: '3v3', entryFeeLabel: '50', rewardsLabel: '10,80' },
-        { id: '4v4', name: '4v4', entryFeeLabel: '50', rewardsLabel: '10,80' }
-      ];
-    } else if (leagueId === 'br') {
-      divisions = [
-        { id: '4v4', name: 'BR', entryFeeLabel: 'Pre-book only (weekends)', rewardsLabel: 'Rewards vary by event' }
-      ];
-    }
-    return of(divisions).pipe(delay(200));
+    return this.http
+      .get<ApiDivision[]>(`${this.leaguesBase}/${leagueId}/divisions`)
+      .pipe(map(list => list.map(d => ({
+        id: d.id,
+        leagueId: d.league_id,
+        divisionType: d.division_type as Division['divisionType'],
+        entryFee: d.entry_fee,
+        rewardsDescription: d.rewards_description,
+      }))));
+  }
+
+  // ── Rooms ─────────────────────────────────────────────────────────────────
+
+  // GET /leagues/{id}/rooms?status=open&division=1v1
+  // Backend: rooms live under leagues, not under /rooms directly
+  getRoomsByLeague(
+    leagueId: string,
+    status: 'open' | 'closed' | 'in_progress' | 'completed' | null = 'open',
+    division: string | null = null,
+  ): Observable<Room[]> {
+    let params = new HttpParams();
+    if (status)   params = params.set('status', status);
+    if (division) params = params.set('division', division);
+
+    return this.http
+      .get<ApiRoom[]>(`${this.leaguesBase}/${leagueId}/rooms`, { params })
+      .pipe(map(list => list.map(r => this.mapRoom(r))));
+  }
+
+  // GET /rooms/{id}
+  getRoom(id: string): Observable<Room> {
+    return this.http
+      .get<ApiRoom>(`${this.roomsBase}/${id}`)
+      .pipe(map(r => this.mapRoom(r)));
+  }
+
+  // POST /rooms/{id}/join
+  joinRoom(req: JoinRoomRequest): Observable<JoinRoomResponse> {
+    return this.http
+      .post<ApiJoinRoomResponse>(`${this.roomsBase}/${req.roomId}/join`, {
+        free_fire_id: req.freeFireId,
+      })
+      .pipe(map(r => ({
+        message: r.message,
+        roomName: r.room_name,
+        adminRoomId: r.admin_room_id,
+        currentPlayers: r.current_players,
+        maxPlayers: r.max_players,
+      })));
+  }
+
+  // POST /rooms/{id}/leave
+  leaveRoom(roomId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.roomsBase}/${roomId}/leave`, {}
+    );
   }
 }

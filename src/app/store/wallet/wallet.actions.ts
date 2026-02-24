@@ -1,70 +1,40 @@
 import { createAction, props } from '@ngrx/store';
-import { Wallet, Transaction, PaymentRequest, RedeemCodeRequest } from '../../core/models/wallet.model';
+import { Wallet, Transaction, PaymentInitiateResponse, PaymentVerifyRequest } from '../../core/models/wallet.model';
 
+// ── Load wallet balance ────────────────────────────────────────────────────
 export const loadWallet = createAction('[Wallet] Load Wallet');
+export const loadWalletSuccess = createAction('[Wallet] Load Wallet Success', props<{ wallet: Wallet }>());
+export const loadWalletFailure = createAction('[Wallet] Load Wallet Failure', props<{ error: string }>());
 
-export const loadWalletSuccess = createAction(
-  '[Wallet] Load Wallet Success',
-  props<{ wallet: Wallet }>()
-);
-
-export const loadWalletFailure = createAction(
-  '[Wallet] Load Wallet Failure',
-  props<{ error: string }>()
-);
-
+// ── Load transaction history ───────────────────────────────────────────────
 export const loadTransactions = createAction('[Wallet] Load Transactions');
+export const loadTransactionsSuccess = createAction('[Wallet] Load Transactions Success', props<{ transactions: Transaction[] }>());
+export const loadTransactionsFailure = createAction('[Wallet] Load Transactions Failure', props<{ error: string }>());
 
-export const loadTransactionsSuccess = createAction(
-  '[Wallet] Load Transactions Success',
-  props<{ transactions: Transaction[] }>()
+// ── Razorpay: step 1 — initiate payment order ─────────────────────────────
+export const initiatePayment = createAction(
+  '[Wallet] Initiate Payment',
+  props<{ amountInr: number; coins: number }>()
 );
+export const initiatePaymentSuccess = createAction(
+  '[Wallet] Initiate Payment Success',
+  props<{ order: PaymentInitiateResponse }>()
+);
+export const initiatePaymentFailure = createAction('[Wallet] Initiate Payment Failure', props<{ error: string }>());
 
-export const loadTransactionsFailure = createAction(
-  '[Wallet] Load Transactions Failure',
-  props<{ error: string }>()
+// ── Razorpay: step 2 — verify payment after modal success ─────────────────
+export const verifyPayment = createAction(
+  '[Wallet] Verify Payment',
+  props<{ verifyData: PaymentVerifyRequest }>()
 );
+export const verifyPaymentSuccess = createAction(
+  '[Wallet] Verify Payment Success',
+  props<{ coinsCredited: number }>()
+);
+export const verifyPaymentFailure = createAction('[Wallet] Verify Payment Failure', props<{ error: string }>());
 
-export const processPayment = createAction(
-  '[Wallet] Process Payment',
-  props<{ paymentData: PaymentRequest }>()
-);
+// ── Reload wallet after any successful payment ────────────────────────────
+export const reloadWalletAfterPayment = createAction('[Wallet] Reload After Payment');
 
-export const processPaymentSuccess = createAction(
-  '[Wallet] Process Payment Success'
-);
-
-export const processPaymentFailure = createAction(
-  '[Wallet] Process Payment Failure',
-  props<{ error: string }>()
-);
-
-export const redeemCode = createAction(
-  '[Wallet] Redeem Code',
-  props<{ codeData: RedeemCodeRequest }>()
-);
-
-export const redeemCodeSuccess = createAction(
-  '[Wallet] Redeem Code Success',
-  props<{ amount: number }>()
-);
-
-export const redeemCodeFailure = createAction(
-  '[Wallet] Redeem Code Failure',
-  props<{ error: string }>()
-);
-
-export const deductCoins = createAction(
-  '[Wallet] Deduct Coins',
-  props<{ amount: number; reason?: string }>()
-);
-
-export const deductCoinsSuccess = createAction(
-  '[Wallet] Deduct Coins Success',
-  props<{ amount: number }>()
-);
-
-export const deductCoinsFailure = createAction(
-  '[Wallet] Deduct Coins Failure',
-  props<{ error: string }>()
-);
+// ── Clear error ───────────────────────────────────────────────────────────
+export const clearWalletError = createAction('[Wallet] Clear Error');

@@ -1,20 +1,20 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, exhaustMap, catchError } from 'rxjs/operators';
+import { map, exhaustMap, catchError, tap } from 'rxjs/operators';
 import { WalletService } from '../../core/services/wallet.service';
 import * as WalletActions from './wallet.actions';
 
 @Injectable()
 export class WalletEffects {
-  
+
   loadWallet$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(WalletActions.loadWallet),
+      ofType(WalletActions.loadWallet, WalletActions.reloadWalletAfterPayment),
       exhaustMap(() =>
         this.walletService.getWallet().pipe(
           map(wallet => WalletActions.loadWalletSuccess({ wallet })),
-          catchError(error => of(WalletActions.loadWalletFailure({ error: error.message })))
+          catchError(err => of(WalletActions.loadWalletFailure({ error: err.message })))
         )
       )
     )
@@ -26,45 +26,43 @@ export class WalletEffects {
       exhaustMap(() =>
         this.walletService.getTransactions().pipe(
           map(transactions => WalletActions.loadTransactionsSuccess({ transactions })),
-          catchError(error => of(WalletActions.loadTransactionsFailure({ error: error.message })))
+          catchError(err => of(WalletActions.loadTransactionsFailure({ error: err.message })))
         )
       )
     )
   );
 
-  processPayment$ = createEffect(() =>
+  // Step 1: create Razorpay order on backend
+  initiatePayment$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(WalletActions.processPayment),
-      exhaustMap(({ paymentData }) =>
-        this.walletService.processPayment(paymentData).pipe(
-          map(() => WalletActions.processPaymentSuccess()),
-          catchError(error => of(WalletActions.processPaymentFailure({ error: error.message })))
+      ofType(WalletActions.initiatePayment),
+      exhaustMap(({ amountInr, coins }) =>
+        this.walletService.initiatePayment({ amount_inr: amountInr, coins }).pipe(
+          map(order => WalletActions.initiatePaymentSuccess({ order })),
+          catchError(err => of(WalletActions.initiatePaymentFailure({ error: err.message })))
         )
       )
     )
   );
 
-  redeemCode$ = createEffect(() =>
+  // Step 2: after Razorpay modal, verify the payment with backend
+  verifyPayment$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(WalletActions.redeemCode),
-      exhaustMap(({ codeData }) =>
-        this.walletService.redeemCode(codeData).pipe(
-          map(({ amount }) => WalletActions.redeemCodeSuccess({ amount })),
-          catchError(error => of(WalletActions.redeemCodeFailure({ error: error.message })))
+      ofType(WalletActions.verifyPayment),
+      exhaustMap(({ verifyData }) =>
+        this.walletService.verifyPayment(verifyData).pipe(
+          map(res => WalletActions.verifyPaymentSuccess({ coinsCredited: res.coins_credited })),
+          catchError(err => of(WalletActions.verifyPaymentFailure({ error: err.message })))
         )
       )
     )
   );
 
-  deductCoins$ = createEffect(() =>
+  // After payment verified: reload wallet so balance reflects immediately
+  reloadAfterVerify$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(WalletActions.deductCoins),
-      exhaustMap(({ amount }) =>
-        this.walletService.deductCoins(amount).pipe(
-          map(() => WalletActions.deductCoinsSuccess({ amount })),
-          catchError(error => of(WalletActions.deductCoinsFailure({ error: error.message })))
-        )
-      )
+      ofType(WalletActions.verifyPaymentSuccess),
+      map(() => WalletActions.reloadWalletAfterPayment())
     )
   );
 

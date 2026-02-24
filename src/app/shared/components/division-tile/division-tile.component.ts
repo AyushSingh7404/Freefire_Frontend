@@ -13,7 +13,7 @@ import { Division } from '../../../core/models/league.model';
   template: `
     <mat-card class="division-tile">
       <div class="thumb"></div>
-      <div class="title">{{ division.name }}</div>
+      <div class="title">{{ division.divisionType | titlecase }}</div>
       <div class="meta">
         <div class="labels">
           <span>Entry:</span>
@@ -105,34 +105,33 @@ export class DivisionTileComponent {
   }
 
   get isKillMode(): boolean {
-    return this.division?.id === '3v3' || this.division?.id === '4v4';
+    return this.division?.divisionType === '3v3' || this.division?.divisionType === '4v4';
   }
 
   get entryAmount(): number {
-    const m = this.division?.entryFeeLabel?.match(/(\d+)/);
-    return m ? parseInt(m[1], 10) : 0;
+    return this.division?.entryFee || 0;
   }
 
   get entryEach(): boolean {
-    return this.division?.id === '2v2' || this.division?.id === '3v3' || this.division?.id === '4v4';
+    return this.division?.divisionType === '2v2' || this.division?.divisionType === '3v3' || this.division?.divisionType === '4v4';
   }
 
   get winnerAmount(): number {
-    const m = this.division?.rewardsLabel?.match(/(\d+)/);
+    const m = this.division?.rewardsDescription?.match(/(\d+)/);
     return m ? parseInt(m[1], 10) : 0;
   }
 
   get winnerEach(): boolean {
-    return this.division?.id === '2v2';
+    return this.division?.divisionType === '2v2';
   }
 
   get killAmount(): number {
-    const nums = this.division?.rewardsLabel?.match(/(\d+)/g);
+    const nums = this.division?.rewardsDescription?.match(/(\d+)/g);
     return nums && nums.length ? parseInt(nums[0], 10) : 0;
   }
 
   get mvpAmount(): number {
-    const nums = this.division?.rewardsLabel?.match(/(\d+)/g);
+    const nums = this.division?.rewardsDescription?.match(/(\d+)/g);
     return nums && nums.length > 1 ? parseInt(nums[1], 10) : 0;
   }
 }

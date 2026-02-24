@@ -1,8 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.fantasyesports.com/api',
-  wsUrl: 'wss://api.fantasyesports.com',
-  paymentGateway: 'https://api.razorpay.com',
+  apiUrl: 'https://your-production-domain.com',
+  wsUrl: 'wss://your-production-domain.com',
   supportedLanguages: ['en'],
   defaultLanguage: 'en'
 };

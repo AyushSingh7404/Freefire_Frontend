@@ -11,7 +11,7 @@ import { LeaderboardEntry } from '../../../core/models/leaderboard.model';
     <mat-card class="leaderboard-entry">
       <div class="rank">{{ entry.rank }}</div>
       <div class="user">
-        <img [src]="entry.avatar || '/assets/default-avatar.png'" alt="{{ entry.username }}">
+        <img [src]="entry.avatarUrl || '/assets/default-avatar.png'" alt="{{ entry.username }}">
         <div>
           <div class="name">{{ entry.username }}</div>
           <div class="stats">Winnings: {{ entry.totalWinnings }} • Win rate: {{ entry.winRate }}%</div>

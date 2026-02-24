@@ -1,61 +1,53 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { LeaderboardEntry, LeagueLeaderboard } from '../models/leaderboard.model';
+import {
+  LeaderboardEntry, LeagueLeaderboard,
+  ApiLeaderboardEntry, ApiGlobalLeaderboard, ApiLeagueLeaderboard
+} from '../models/leaderboard.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class LeaderboardService {
-  private readonly apiUrl = `${environment.apiUrl}/leaderboard`;
+  private readonly base = `${environment.apiUrl}/leaderboard`;
 
   constructor(private http: HttpClient) {}
 
-  // Mock data
-  private mockGlobalLeaderboard: LeaderboardEntry[] = [
-    {
-      rank: 1,
-      userId: '1',
-      username: 'ProGamer123',
-      avatar: 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100',
-      totalWinnings: 5000,
-      gamesPlayed: 25,
-      winRate: 68,
-      averageKills: 8.5,
-      points: 2800
-    },
-    {
-      rank: 2,
-      userId: '2',
-      username: 'ElitePlayer',
-      totalWinnings: 4200,
-      gamesPlayed: 30,
-      winRate: 63,
-      averageKills: 7.2,
-      points: 2650
-    },
-    {
-      rank: 3,
-      userId: '3',
-      username: 'FireMaster',
-      totalWinnings: 3800,
-      gamesPlayed: 22,
-      winRate: 59,
-      averageKills: 9.1,
-      points: 2420
-    }
-  ];
-
-  getGlobalLeaderboard(): Observable<LeaderboardEntry[]> {
-    return of(this.mockGlobalLeaderboard).pipe(delay(500));
+  private mapEntry(e: ApiLeaderboardEntry): LeaderboardEntry {
+    return {
+      rank: e.rank,
+      userId: e.user_id,
+      username: e.username,
+      avatarUrl: e.avatar_url,
+      totalWinnings: e.total_winnings,
+      gamesPlayed: e.games_played,
+      winRate: e.win_rate,
+      averageKills: e.average_kills,
+      points: e.points,
+    };
   }
 
-  getLeagueLeaderboard(leagueId: string): Observable<LeagueLeaderboard> {
-    return of({
-      leagueId,
-      leagueName: leagueId === 'gold' ? 'Gold League' : leagueId === 'platinum' ? 'Platinum League' : 'Diamond League',
-      entries: this.mockGlobalLeaderboard.slice(0, 10)
-    }).pipe(delay(500));
+  getGlobalLeaderboard(page = 1, limit = 50): Observable<LeaderboardEntry[]> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+    return this.http
+      .get<ApiGlobalLeaderboard>(`${this.base}/global`, { params })
+      .pipe(map(res => res.entries.map(e => this.mapEntry(e))));
+  }
+
+  getLeagueLeaderboard(leagueId: string, page = 1, limit = 50): Observable<LeagueLeaderboard> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+    return this.http
+      .get<ApiLeagueLeaderboard>(`${this.base}/league/${leagueId}`, { params })
+      .pipe(map(res => ({
+        leagueId: res.league_id,
+        leagueName: res.league_name,
+        total: res.total,
+        entries: res.entries.map(e => this.mapEntry(e)),
+      })));
   }
 }

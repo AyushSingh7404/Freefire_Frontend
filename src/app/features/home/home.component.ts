@@ -55,7 +55,7 @@ import { loadLeagues } from '../../store/league/league.actions';
       <section class="leagues-section">
         <div class="section-header">
           <h2>Choose Your League</h2>
-          <p>Select from three competitive tiers based on your skill level</p>
+          <p>Select from below competitive tier(s) based on your skill level</p>
         </div>
         
         <div class="leagues-grid" *ngIf="!(leagueLoading$ | async); else loadingTemplate">
@@ -75,7 +75,7 @@ import { loadLeagues } from '../../store/league/league.actions';
       <!-- Features Section -->
       <section class="features-section">
         <div class="section-header">
-          <h2>Why Choose FireEsports?</h2>
+          <h2>Why Choose Aurex?</h2>
         </div>
         
         <div class="features-grid">

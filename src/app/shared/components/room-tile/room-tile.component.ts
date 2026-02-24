@@ -55,8 +55,8 @@ import { Room } from '../../../core/models/league.model';
           </mat-progress-bar>
         </div>
         
-        <div *ngIf="room.roomId" class="room-id">
-          <strong>Room ID: {{ room.roomId }}</strong>
+        <div *ngIf="room.adminRoomId" class="room-id">
+          <strong>Room ID: {{ room.adminRoomId }}</strong>
         </div>
       </mat-card-content>
       

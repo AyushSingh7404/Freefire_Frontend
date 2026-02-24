@@ -1,91 +1,73 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { 
-  Wallet, 
-  Transaction, 
-  PaymentRequest, 
-  RedeemCodeRequest 
+import {
+  Wallet, Transaction, TransactionListResponse,
+  PaymentInitiateRequest, PaymentInitiateResponse, PaymentVerifyRequest,
+  ApiWallet, ApiTransaction, ApiTransactionList,
 } from '../models/wallet.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class WalletService {
-  private readonly apiUrl = `${environment.apiUrl}/wallet`;
+  private readonly base = `${environment.apiUrl}/wallet`;
 
   constructor(private http: HttpClient) {}
 
-  // Mock data
-  private mockWallet: Wallet = {
-    id: '1',
-    userId: '1',
-    balance: 1500,
-    lockedBalance: 100,
-    updatedAt: new Date()
-  };
+  // ── Mappers ──────────────────────────────────────────────────────────────
 
-  private mockTransactions: Transaction[] = [
-    {
-      id: '1',
-      userId: '1',
-      type: 'credit',
-      amount: 1000,
-      description: 'Initial bonus',
-      reference: 'BONUS001',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 86400000)
-    },
-    {
-      id: '2',
-      userId: '1',
-      type: 'debit',
-      amount: 50,
-      description: 'Room entry fee',
-      reference: 'ROOM001',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 43200000)
-    },
-    {
-      id: '3',
-      userId: '1',
-      type: 'credit',
-      amount: 200,
-      description: 'Tournament win',
-      reference: 'WIN001',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 21600000)
-    }
-  ];
+  private mapWallet(w: ApiWallet): Wallet {
+    return {
+      id: w.id,
+      userId: w.user_id,
+      balance: w.balance,
+      lockedBalance: w.locked_balance,
+      availableBalance: w.available_balance,
+      updatedAt: new Date(w.updated_at),
+    };
+  }
 
+  private mapTx(t: ApiTransaction): Transaction {
+    return {
+      id: t.id,
+      type: t.type as 'credit' | 'debit',
+      amount: t.amount,
+      description: t.description,
+      reference: t.reference,
+      status: t.status as 'pending' | 'completed' | 'failed',
+      createdAt: new Date(t.created_at),
+    };
+  }
+
+  // ── GET /wallet — current user's coin balance ─────────────────────────────
   getWallet(): Observable<Wallet> {
-    return of(this.mockWallet).pipe(delay(500));
+    return this.http
+      .get<ApiWallet>(`${this.base}`)
+      .pipe(map(w => this.mapWallet(w)));
   }
 
-  getTransactions(): Observable<Transaction[]> {
-    return of(this.mockTransactions).pipe(delay(500));
+  // ── GET /wallet/transactions — paginated history ───────────────────────────
+  getTransactions(page = 1, limit = 20): Observable<Transaction[]> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('limit', String(limit));
+    return this.http
+      .get<ApiTransactionList>(`${this.base}/transactions`, { params })
+      .pipe(map(res => res.transactions.map(t => this.mapTx(t))));
   }
 
-  processPayment(paymentData: PaymentRequest): Observable<{ success: boolean; transactionId: string }> {
-    return of({
-      success: true,
-      transactionId: 'TXN' + Date.now()
-    }).pipe(delay(2000));
+  // ── Razorpay step 1 — POST /wallet/payment/initiate ───────────────────────
+  initiatePayment(req: PaymentInitiateRequest): Observable<PaymentInitiateResponse> {
+    return this.http.post<PaymentInitiateResponse>(
+      `${this.base}/payment/initiate`, req
+    );
   }
 
-  redeemCode(codeData: RedeemCodeRequest): Observable<{ success: boolean; amount: number }> {
-    return of({
-      success: true,
-      amount: 100
-    }).pipe(delay(1000));
-  }
-
-  deductCoins(amount: number): Observable<{ success: boolean }> {
-    return of({ success: true }).pipe(delay(500));
-  }
-
-  addCoins(amount: number, description: string): Observable<{ success: boolean }> {
-    return of({ success: true }).pipe(delay(500));
+  // ── Razorpay step 2 — POST /wallet/payment/verify ────────────────────────
+  verifyPayment(req: PaymentVerifyRequest): Observable<{ message: string; coins_credited: number }> {
+    return this.http.post<{ message: string; coins_credited: number }>(
+      `${this.base}/payment/verify`, req
+    );
   }
 }

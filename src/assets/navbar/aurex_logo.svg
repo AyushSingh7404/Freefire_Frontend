@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 44" fill="none">
+  <defs>
+    <linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff6b35"/>
+      <stop offset="100%" stop-color="#f7931e"/>
+    </linearGradient>
+    <linearGradient id="ag2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6b35"/>
+      <stop offset="100%" stop-color="#f7c01e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: angular "A" with crossbar and flame tip -->
+  <!-- Main A body -->
+  <polygon points="20,4 34,40 28,40 26.5,35 13.5,35 12,40 6,40 20,4" fill="url(#ag)"/>
+  <!-- Cutout inner triangle (makes A hollow) -->
+  <polygon points="20,13 23,25 17,25" fill="#0f0f23"/>
+  <!-- Crossbar -->
+  <rect x="14" y="26" width="12" height="3" rx="1.5" fill="url(#ag)"/>
+  <!-- Small flame accent above the A tip -->
+  <path d="M20 0 C21.5 2 23 4 20 6 C17 4 18.5 2 20 0Z" fill="#f7c01e" opacity="0.9"/>
+
+  <!-- Wordmark: AUREX -->
+  <text
+    x="42" y="31"
+    font-family="'Segoe UI', Arial, sans-serif"
+    font-weight="900"
+    font-size="20"
+    letter-spacing="2.5"
+    fill="url(#ag2)">AUREX</text>
+</svg>

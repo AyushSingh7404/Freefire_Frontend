@@ -13,7 +13,7 @@ import { League } from '../../../core/models/league.model';
   template: `
     <mat-card class="league-card" [class]="'league-' + league.tier">
       <div class="league-image">
-        <img [src]="league.image" [alt]="league.name">
+        <img [src]="league.imageUrl" [alt]="league.name">
         <div class="league-overlay">
           <div class="league-tier">{{ league.tier | titlecase }}</div>
         </div>

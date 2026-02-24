@@ -1,16 +1,38 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
-import { Match } from '../models/match.model';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { Match, ApiMatch, ApiMatchHistory } from '../models/match.model';
 
 @Injectable({ providedIn: 'root' })
 export class MatchService {
-  private mock: Match[] = [
-    { id: 'm1', leagueId: 'silver', division: '1v1', roomName: 'Silver Room #1', result: 'win', coinsWon: 30, kills: 6, playedAt: new Date(Date.now() - 86400000) },
-    { id: 'm2', leagueId: 'gold', division: '2v2', roomName: 'Gold Room #1', result: 'loss', coinsWon: 0, kills: 3, playedAt: new Date(Date.now() - 43200000) },
-    { id: 'm3', leagueId: 'diamond', division: '4v4', roomName: 'Diamond Room #1', result: 'win', coinsWon: 160, kills: 12, playedAt: new Date(Date.now() - 21600000) }
-  ];
+  private readonly base = `${environment.apiUrl}/matches`;
 
-  getHistory(): Observable<Match[]> {
-    return of(this.mock).pipe(delay(400));
+  constructor(private http: HttpClient) {}
+
+  private mapMatch(m: ApiMatch): Match {
+    return {
+      id: m.id,
+      roomId: m.room_id,
+      leagueId: m.league_id,
+      division: m.division,
+      roomName: m.room_name,
+      result: m.result as Match['result'],
+      coinsWon: m.coins_won,
+      kills: m.kills,
+      position: m.position,
+      playedAt: new Date(m.played_at),
+    };
+  }
+
+  // Backend: GET /matches/history (NOT /matches/me)
+  getHistory(page = 1, limit = 20): Observable<Match[]> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('limit', String(limit));
+    return this.http
+      .get<ApiMatchHistory>(`${this.base}/history`, { params })
+      .pipe(map(res => res.matches.map(m => this.mapMatch(m))));
   }
 }

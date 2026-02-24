@@ -1,303 +1,266 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
-import { selectAuthLoading, selectAuthError } from '../../../store/auth/auth.selectors';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { login, clearError } from '../../../store/auth/auth.actions';
-import { AuthService } from '../../../core/services/auth.service';
+import {
+  selectAuthLoading,
+  selectAuthError,
+  selectIsAuthenticated,
+} from '../../../store/auth/auth.selectors';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule
-  ],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
-    <div class="auth-container">
-      <mat-card class="auth-card">
-        <mat-card-header>
-          <mat-card-title>Welcome Back</mat-card-title>
-          <mat-card-subtitle>Login to your FireEsports account</mat-card-subtitle>
-        </mat-card-header>
-        
-        <mat-card-content>
-          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-            <div class="form-field">
-              <label for="email">Email</label>
-              <input id="email" type="email" class="text-input" placeholder="Enter your email" formControlName="email" autocomplete="email">
-              <div class="field-error" *ngIf="loginForm.get('email')?.hasError('required')">
-                Email is required
-              </div>
-              <div class="field-error" *ngIf="loginForm.get('email')?.hasError('email')">
-                Please enter a valid email
-              </div>
-            </div>
-            
-            <div class="form-field">
-              <label for="password">Password</label>
-              <div class="input-with-action">
-                <input id="password" [type]="hidePassword ? 'password' : 'text'" class="text-input" placeholder="Enter password" formControlName="password" autocomplete="current-password">
-                <button type="button" mat-icon-button (click)="hidePassword = !hidePassword">
-                </button>
-              </div>
-              <div class="field-error" *ngIf="loginForm.get('password')?.hasError('required')">
-                Password is required
-              </div>
-              <div class="field-error" *ngIf="loginForm.get('password')?.hasError('minlength')">
-                Password must be at least 6 characters
-              </div>
-            </div>
-            
-            <div class="form-field">
-              <label for="otp">OTP</label>
-              <input id="otp" type="text" class="text-input" placeholder="Enter 6-digit OTP" formControlName="otp" autocomplete="one-time-code">
-              <div class="field-error" *ngIf="loginForm.get('otp')?.hasError('required') && otpRequired">
-                OTP is required
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button type="button"
-                      mat-stroked-button
-                      class="secondary-btn"
-                      (click)="onSendOtp()">
-                Send OTP
+    <div class="auth-page">
+      <div class="auth-card">
+
+        <!-- Header -->
+        <div class="auth-header">
+          <div class="logo-ring">
+            <span class="logo-icon">&#9889;</span>
+          </div>
+          <h1 class="auth-title">Welcome Back</h1>
+          <p class="auth-subtitle">Sign in to your Aurex account</p>
+        </div>
+
+        <!-- Error banner -->
+        <div class="error-banner" *ngIf="error$ | async as err">
+          <span class="error-icon">&#9888;</span>
+          <span>{{ err }}</span>
+          <button class="error-close" (click)="clearError()">&#10005;</button>
+        </div>
+
+        <!-- Login form -->
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+
+          <div class="field-group">
+            <label class="field-label">Email Address</label>
+            <input
+              type="email"
+              class="field-input"
+              [class.invalid]="emailInvalid"
+              formControlName="email"
+              placeholder="your@email.com"
+              autocomplete="email"
+            />
+            <span class="field-error" *ngIf="emailInvalid">
+              Please enter a valid email address.
+            </span>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">
+              Password
+              <a routerLink="/auth/forgot-password" class="forgot-link">Forgot?</a>
+            </label>
+            <div class="password-wrap">
+              <input
+                [type]="showPwd ? 'text' : 'password'"
+                class="field-input"
+                [class.invalid]="pwdInvalid"
+                formControlName="password"
+                placeholder="��������"
+                autocomplete="current-password"
+              />
+              <button type="button" class="pwd-toggle" (click)="showPwd = !showPwd" tabindex="-1">
+                {{ showPwd ? '&#128065;' : '&#128274;' }}
               </button>
-              <button type="submit" 
-                      mat-raised-button 
-                      class="primary-btn"
-                      [disabled]="loginForm.invalid || (loading$ | async)">
-                <mat-spinner *ngIf="loading$ | async" diameter="20"></mat-spinner>
-                <span *ngIf="!(loading$ | async)">Verify & Login</span>
-              </button>
-              
-              <a routerLink="/auth/forgot-password" class="forgot-password">
-                Forgot Password?
-              </a>
             </div>
-            
-            <div class="error-message" *ngIf="error$ | async as error">
-              {{ error }}
-            </div>
-            <div class="text-center mt-2" *ngIf="statusMessage">
-              {{ statusMessage }}
-            </div>
-          </form>
-        </mat-card-content>
-        
-        <mat-card-actions class="auth-footer">
-          <p>
-            Don't have an account? 
-            <a routerLink="/auth/register">Sign up</a>
-          </p>
-        </mat-card-actions>
-      </mat-card>
+            <span class="field-error" *ngIf="pwdInvalid">
+              Password is required.
+            </span>
+          </div>
+
+          <button
+            type="submit"
+            class="submit-btn"
+            [disabled]="(loading$ | async) || form.invalid"
+          >
+            <span class="spinner" *ngIf="loading$ | async"></span>
+            <span *ngIf="!(loading$ | async)">Sign In</span>
+            <span *ngIf="loading$ | async">Signing in...</span>
+          </button>
+
+        </form>
+
+        <!-- Footer -->
+        <p class="auth-footer">
+          Don't have an account?
+          <a routerLink="/auth/register" class="auth-link">Create one free</a>
+        </p>
+
+      </div>
     </div>
   `,
   styles: [`
-    .auth-container {
+    .auth-page {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+      background: linear-gradient(135deg, #0a0a1a 0%, #0f0f2e 50%, #1a0a2e 100%);
+      padding: 1rem;
     }
-    
     .auth-card {
       width: 100%;
-      max-width: 400px;
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(10px);
+      max-width: 420px;
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
+      padding: 2.5rem 2rem;
     }
-    
-    .mat-mdc-card-header {
-      text-align: center;
-      padding-bottom: 0;
-    }
-    
-    .mat-mdc-card-title {
-      color: #ff6b35;
+    .auth-header { text-align: center; margin-bottom: 2rem; }
+    .logo-ring {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
       font-size: 2rem;
-      font-weight: bold;
     }
-    
-    .mat-mdc-card-subtitle {
-      color: rgba(255, 255, 255, 0.7);
-      margin-top: 0.5rem;
-    }
-    
-    .mat-mdc-card-content {
-      padding-top: 2rem;
-    }
-    
-    .form-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .form-field label {
-      color: rgba(255, 255, 255, 0.9);
-      font-weight: 600;
-    }
-    .text-input {
-      width: 100%;
-      padding: 12px 14px;
+    .logo-icon { line-height: 1; }
+    .auth-title { color: #fff; font-size: 1.6rem; font-weight: 700; margin: 0 0 .3rem; }
+    .auth-subtitle { color: rgba(255,255,255,0.5); font-size: .9rem; margin: 0; }
+
+    .error-banner {
+      display: flex; align-items: center; gap: .6rem;
+      background: rgba(244,67,54,0.15);
+      border: 1px solid rgba(244,67,54,0.4);
       border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background-color: rgba(255, 255, 255, 0.05);
-      color: white;
-      outline: none;
-    }
-    .text-input::placeholder {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    .text-input:focus {
-      border-color: #ff6b35;
-      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25);
-    }
-    .input-with-action {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .field-error {
+      padding: .65rem .9rem;
       color: #f44336;
-      font-size: 0.85rem;
+      font-size: .88rem;
+      margin-bottom: 1.25rem;
     }
-    
-    .form-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-top: 1rem;
+    .error-icon { font-size: 1rem; flex-shrink: 0; }
+    .error-close {
+      margin-left: auto; background: none; border: none;
+      color: #f44336; cursor: pointer; font-size: .85rem; padding: 0;
     }
-    
-    .primary-btn {
-      width: 100%;
+
+    .auth-form { display: flex; flex-direction: column; gap: 1.1rem; }
+    .field-group { display: flex; flex-direction: column; gap: .35rem; }
+    .field-label {
+      display: flex; justify-content: space-between; align-items: center;
+      color: rgba(255,255,255,0.8); font-size: .875rem; font-weight: 600;
+    }
+    .forgot-link { color: #ff6b35; font-size: .8rem; text-decoration: none; font-weight: 500; }
+    .forgot-link:hover { text-decoration: underline; }
+
+    .field-input {
+      width: 100%; padding: 11px 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px; color: #fff;
+      font-size: .95rem; outline: none;
+      transition: border-color .2s;
+      box-sizing: border-box;
+    }
+    .field-input::placeholder { color: rgba(255,255,255,0.3); }
+    .field-input:focus { border-color: #ff6b35; }
+    .field-input.invalid { border-color: #f44336; }
+
+    .password-wrap { position: relative; }
+    .password-wrap .field-input { padding-right: 44px; }
+    .pwd-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0; line-height: 1;
+    }
+
+    .field-error { color: #f44336; font-size: .78rem; }
+
+    .submit-btn {
+      width: 100%; padding: 13px;
       background: linear-gradient(45deg, #ff6b35, #f7931e);
-      color: white;
-      border-radius: 25px;
-      padding: 12px 24px;
-      font-weight: bold;
-      text-transform: uppercase;
+      border: none; border-radius: 12px;
+      color: #fff; font-size: 1rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: .5rem;
+      transition: opacity .2s, transform .1s;
+      margin-top: .5rem;
     }
-    
-    .forgot-password {
-      color: #ff6b35;
-      text-decoration: none;
-      text-align: center;
-      font-size: 0.9rem;
+    .submit-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
     }
-    
-    .forgot-password:hover {
-      text-decoration: underline;
-    }
-    
-    .error-message {
-      color: #f44336;
-      text-align: center;
-      margin-top: 1rem;
-      padding: 0.5rem;
-      background: rgba(244, 67, 54, 0.1);
-      border-radius: 8px;
-    }
-    
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     .auth-footer {
-      text-align: center;
-      padding-top: 0;
+      text-align: center; color: rgba(255,255,255,0.5); font-size: .88rem; margin: 1.5rem 0 0;
     }
-    
-    .auth-footer p {
-      margin: 0;
-      color: rgba(255, 255, 255, 0.7);
-    }
-    
-    .auth-footer a {
-      color: #ff6b35;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    
-    .auth-footer a:hover {
-      text-decoration: underline;
-    }
-  `]
+    .auth-link { color: #ff6b35; font-weight: 600; text-decoration: none; }
+    .auth-link:hover { text-decoration: underline; }
+  `],
 })
-export class LoginComponent implements OnInit {
-  loginForm: FormGroup;
-  hidePassword = true;
-  loading$: Observable<boolean>;
-  error$: Observable<string | null>;
-  otpRequired = false;
-  statusMessage = '';
+export class LoginComponent implements OnInit, OnDestroy {
+  form!: FormGroup;
+  showPwd = false;
+
+  loading$!: Observable<boolean>;
+  error$!: Observable<string | null>;
+
+  private destroy$ = new Subject<void>();
+  private returnUrl = '/';
 
   constructor(
     private fb: FormBuilder,
     private store: Store,
-    private authService: AuthService
-  ) {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+    private route: ActivatedRoute,
+  ) {}
+
+  ngOnInit(): void {
+    this.form = this.fb.group({
+      email:    ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      otp: ['']
     });
 
     this.loading$ = this.store.select(selectAuthLoading);
-    this.error$ = this.store.select(selectAuthError);
-  }
+    this.error$   = this.store.select(selectAuthError);
 
-  ngOnInit() {
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+
+    // Clear any leftover error from a previous session
     this.store.dispatch(clearError());
   }
 
-  onSubmit() {
-    if (this.loginForm.valid) {
-      const { email, otp } = this.loginForm.value;
-      if (!otp) {
-        this.otpRequired = true;
-        this.statusMessage = 'Please enter the OTP sent to your email.';
-        return;
-      }
-      this.authService.verifyOtp({ email, otp }).subscribe(res => {
-        if (res.success) {
-          this.store.dispatch(login({ credentials: { email, password: this.loginForm.value.password } }));
-        } else {
-          this.statusMessage = 'Invalid OTP. Please try again.';
-        }
-      });
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  onSendOtp() {
-    const emailCtrl = this.loginForm.get('email');
-    if (emailCtrl?.valid) {
-      this.authService.sendOtp(emailCtrl.value).subscribe(() => {
-        this.statusMessage = 'OTP sent to your email.';
-        this.otpRequired = true;
-      });
-    } else {
-      this.statusMessage = 'Please enter a valid email to receive OTP.';
+  get emailInvalid(): boolean {
+    const c = this.form.get('email');
+    return !!(c?.invalid && c?.touched);
+  }
+
+  get pwdInvalid(): boolean {
+    const c = this.form.get('password');
+    return !!(c?.invalid && c?.touched);
+  }
+
+  onSubmit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
     }
+    const { email, password } = this.form.value;
+    this.store.dispatch(login({ email, password }));
+  }
+
+  clearError(): void {
+    this.store.dispatch(clearError());
   }
 }

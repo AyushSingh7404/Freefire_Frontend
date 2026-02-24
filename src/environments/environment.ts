@@ -1,8 +1,7 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api',
-  wsUrl: 'ws://localhost:3000',
-  paymentGateway: 'https://api.razorpay.com',
+  apiUrl: 'http://localhost:8000',   // FastAPI backend — no /api prefix
+  wsUrl: 'ws://localhost:8000',       // WebSocket base
   supportedLanguages: ['en'],
   defaultLanguage: 'en'
 };

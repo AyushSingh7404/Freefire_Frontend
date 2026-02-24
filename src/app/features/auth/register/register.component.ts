@@ -1,373 +1,266 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
-import { selectAuthLoading, selectAuthError } from '../../../store/auth/auth.selectors';
-import { register, clearError } from '../../../store/auth/auth.actions';
-import { AuthService } from '../../../core/services/auth.service';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil, take } from 'rxjs/operators';
+import {
+  selectAuthLoading, selectAuthError,
+  selectRegisterOtpSent, selectPendingEmail
+} from '../../../store/auth/auth.selectors';
+import { initiateRegister, verifyRegister, sendOtp, clearError } from '../../../store/auth/auth.actions';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [
-    CommonModule,
-    RouterModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule
+    CommonModule, RouterModule, ReactiveFormsModule,
+    MatCardModule, MatButtonModule, MatProgressSpinnerModule,
   ],
   template: `
     <div class="auth-container">
       <mat-card class="auth-card">
         <mat-card-header>
-          <mat-card-title>Join FireEsports</mat-card-title>
+          <mat-card-title>Join Aurex</mat-card-title>
           <mat-card-subtitle>Create your account and start competing</mat-card-subtitle>
         </mat-card-header>
-        
+
         <mat-card-content>
-          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+          <!-- ── Step 1: Registration form ── -->
+          <form *ngIf="!(otpSent$ | async)" [formGroup]="regForm" (ngSubmit)="onRegister()">
+
             <div class="info-banner">
-              These details are important. Fill them correctly — you will not be able to join any room if your Free Fire UID or in‑game name are incorrect.
+              ⚠️ Fill your Free Fire details correctly — incorrect UID or name will
+              prevent you from joining rooms.
             </div>
+
             <div class="form-field">
-              <label for="age">Age</label>
-              <input id="age" type="number" min="16" class="text-input" placeholder="Enter your age" formControlName="age" autocomplete="off">
-              <div class="field-error" *ngIf="registerForm.get('age')?.hasError('required')">
-                Age is required
-              </div>
-              <div class="field-error" *ngIf="registerForm.get('age')?.hasError('min')">
-                Age must be more than 15
-              </div>
+              <label>Age</label>
+              <input type="number" min="13" class="text-input"
+                     placeholder="Your age (13–100)" formControlName="age">
+              <div class="field-error" *ngIf="f['age'].touched && f['age'].errors?.['required']">Age is required</div>
+              <div class="field-error" *ngIf="f['age'].touched && f['age'].errors?.['min']">Must be 13 or older</div>
+              <div class="field-error" *ngIf="f['age'].touched && f['age'].errors?.['max']">Must be 100 or younger</div>
             </div>
+
             <div class="form-field">
-              <label for="username">Username</label>
-              <input id="username" type="text" class="text-input" placeholder="Enter your username" formControlName="username" autocomplete="username">
-              <div class="field-error" *ngIf="registerForm.get('username')?.hasError('required')">
-                Username is required
-              </div>
-              <div class="field-error" *ngIf="registerForm.get('username')?.hasError('minlength')">
-                Username must be at least 3 characters
-              </div>
+              <label>Username</label>
+              <input type="text" class="text-input"
+                     placeholder="Letters, numbers, underscores only (3–30 chars)"
+                     formControlName="username" autocomplete="username">
+              <div class="field-error" *ngIf="f['username'].touched && f['username'].errors?.['required']">Username is required</div>
+              <div class="field-error" *ngIf="f['username'].touched && f['username'].errors?.['minlength']">At least 3 characters</div>
+              <div class="field-error" *ngIf="f['username'].touched && f['username'].errors?.['pattern']">Letters, numbers, underscores only</div>
             </div>
-            
+
             <div class="form-field">
-              <label for="email">Email</label>
-              <input id="email" type="email" class="text-input" placeholder="Enter your email" formControlName="email" autocomplete="email">
-              <div class="field-error" *ngIf="registerForm.get('email')?.hasError('required')">
-                Email is required
-              </div>
-              <div class="field-error" *ngIf="registerForm.get('email')?.hasError('email')">
-                Please enter a valid email
-              </div>
+              <label>Email</label>
+              <input type="email" class="text-input"
+                     placeholder="Your email" formControlName="email" autocomplete="email">
+              <div class="field-error" *ngIf="f['email'].touched && f['email'].errors?.['required']">Email is required</div>
+              <div class="field-error" *ngIf="f['email'].touched && f['email'].errors?.['email']">Enter a valid email</div>
             </div>
-            
+
             <div class="form-field">
-              <label for="freeFireId">Free Fire UID</label>
-              <input id="freeFireId" type="text" class="text-input" placeholder="Enter your Free Fire UID" formControlName="freeFireId" autocomplete="off">
-              <div class="field-error" *ngIf="registerForm.get('freeFireId')?.hasError('required')">
-                Free Fire UID is required
-              </div>
-              <div class="field-error" *ngIf="registerForm.get('freeFireId')?.hasError('pattern')">
-                UID must be 6–12 digits
-              </div>
+              <label>Free Fire UID</label>
+              <input type="text" class="text-input"
+                     placeholder="In-game UID (6–12 digits)" formControlName="freeFireId">
+              <div class="field-error" *ngIf="f['freeFireId'].touched && f['freeFireId'].invalid">UID must be 6–12 digits</div>
             </div>
-            
+
             <div class="form-field">
-              <label for="freeFireName">Free Fire Username</label>
-              <input id="freeFireName" type="text" class="text-input" placeholder="Enter your in-game name" formControlName="freeFireName" autocomplete="off">
-              <div class="field-error" *ngIf="registerForm.get('freeFireName')?.hasError('required')">
-                Free Fire username is required
-              </div>
-              <div class="field-error" *ngIf="registerForm.get('freeFireName')?.hasError('minlength')">
-                Username must be at least 3 characters
-              </div>
+              <label>Free Fire Username</label>
+              <input type="text" class="text-input"
+                     placeholder="Your exact in-game name" formControlName="freeFireName">
+              <div class="field-error" *ngIf="f['freeFireName'].touched && f['freeFireName'].errors?.['required']">In-game name is required</div>
             </div>
-            
+
             <div class="form-field">
-              <label for="password">Password</label>
+              <label>Password</label>
               <div class="input-with-action">
-                <input id="password" [type]="hidePassword ? 'password' : 'text'" class="text-input" placeholder="Enter password" formControlName="password" autocomplete="new-password">
-                <button type="button" mat-icon-button (click)="hidePassword = !hidePassword">
-                </button>
+                <input [type]="hidePw ? 'password' : 'text'" class="text-input"
+                       placeholder="At least 8 characters" formControlName="password" autocomplete="new-password">
+                <button type="button" class="toggle-btn" (click)="hidePw = !hidePw">{{ hidePw ? '👁' : '🙈' }}</button>
               </div>
-              <div class="field-error" *ngIf="registerForm.get('password')?.hasError('required')">
-                Password is required
-              </div>
-              <div class="field-error" *ngIf="registerForm.get('password')?.hasError('minlength')">
-                Password must be at least 6 characters
-              </div>
+              <!-- min 8 matches backend RegisterRequest.password_strong validator -->
+              <div class="field-error" *ngIf="f['password'].touched && f['password'].errors?.['minlength']">At least 8 characters required</div>
             </div>
-            
+
             <div class="form-field">
-              <label for="confirmPassword">Confirm Password</label>
+              <label>Confirm Password</label>
               <div class="input-with-action">
-                <input id="confirmPassword" [type]="hideConfirmPassword ? 'password' : 'text'" class="text-input" placeholder="Re-enter password" formControlName="confirmPassword" autocomplete="new-password">
-                <button type="button" mat-icon-button (click)="hideConfirmPassword = !hideConfirmPassword">
-                </button>
+                <input [type]="hideCpw ? 'password' : 'text'" class="text-input"
+                       placeholder="Repeat password" formControlName="confirmPassword" autocomplete="new-password">
+                <button type="button" class="toggle-btn" (click)="hideCpw = !hideCpw">{{ hideCpw ? '👁' : '🙈' }}</button>
               </div>
-              <div class="field-error" *ngIf="registerForm.get('confirmPassword')?.hasError('required')">
-                Please confirm your password
-              </div>
-              <div class="field-error" *ngIf="registerForm.hasError('passwordMismatch') && !registerForm.get('confirmPassword')?.hasError('required')">
+              <div class="field-error"
+                   *ngIf="regForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">
                 Passwords do not match
               </div>
             </div>
-            
+
+            <div class="form-actions">
+              <button type="submit" mat-raised-button class="primary-btn"
+                      [disabled]="regForm.invalid || (loading$ | async)">
+                <mat-spinner *ngIf="loading$ | async" diameter="20"></mat-spinner>
+                <span *ngIf="!(loading$ | async)">Create Account &amp; Send OTP</span>
+              </button>
+            </div>
+
+          </form>
+
+          <!-- ── Step 2: OTP verification ── -->
+          <form *ngIf="otpSent$ | async" [formGroup]="otpForm" (ngSubmit)="onVerify()">
+            <p class="otp-hint">
+              An OTP has been sent to <strong>{{ pendingEmail$ | async }}</strong>.
+              Check your inbox (and spam folder).
+            </p>
+
             <div class="form-field">
-              <label for="otp">OTP</label>
-              <input id="otp" type="text" class="text-input" placeholder="Enter 6-digit OTP" formControlName="otp" autocomplete="one-time-code">
-              <div class="field-error" *ngIf="registerForm.get('otp')?.hasError('required') && otpRequired">
-                OTP is required
+              <label>6-digit OTP</label>
+              <input type="text" class="text-input" placeholder="Enter OTP"
+                     formControlName="otp" autocomplete="one-time-code" maxlength="6">
+              <div class="field-error"
+                   *ngIf="otpForm.get('otp')?.touched && otpForm.get('otp')?.invalid">
+                Enter a valid 6-digit OTP
               </div>
             </div>
+
             <div class="form-actions">
-              <button type="button" 
-                      mat-stroked-button 
-                      class="secondary-btn"
-                      (click)="onSendOtp()">
-                Send OTP
-              </button>
-              <button type="submit" 
-                      mat-raised-button 
-                      class="primary-btn"
-                      [disabled]="registerForm.invalid || (loading$ | async)">
+              <button type="submit" mat-raised-button class="primary-btn"
+                      [disabled]="otpForm.invalid || (loading$ | async)">
                 <mat-spinner *ngIf="loading$ | async" diameter="20"></mat-spinner>
-                <span *ngIf="!(loading$ | async)">Create Account</span>
+                <span *ngIf="!(loading$ | async)">Verify &amp; Create Account</span>
+              </button>
+              <button type="button" class="resend-btn" (click)="onResend()"
+                      [disabled]="loading$ | async">
+                Resend OTP
               </button>
             </div>
-            
-            <div class="error-message" *ngIf="error$ | async as error">
-              {{ error }}
-            </div>
-            <div class="text-center mt-2" *ngIf="statusMessage">{{ statusMessage }}</div>
           </form>
+
+          <div class="error-message" *ngIf="error$ | async as err">{{ err }}</div>
+          <div class="status-message" *ngIf="statusMsg">{{ statusMsg }}</div>
         </mat-card-content>
-        
+
         <mat-card-actions class="auth-footer">
-          <p>
-            Already have an account? 
-            <a routerLink="/auth/login">Sign in</a>
-          </p>
+          <p>Already have an account? <a routerLink="/auth/login">Sign in</a></p>
         </mat-card-actions>
       </mat-card>
     </div>
   `,
   styles: [`
-    .auth-container {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
-    }
-    
-    .auth-card {
-      width: 100%;
-      max-width: 400px;
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
-    }
-    
-    .mat-mdc-card-header {
-      text-align: center;
-      padding-bottom: 0;
-    }
-    
-    .mat-mdc-card-title {
-      color: #ff6b35;
-      font-size: 2rem;
-      font-weight: bold;
-    }
-    
-    .mat-mdc-card-subtitle {
-      color: rgba(255, 255, 255, 0.7);
-      margin-top: 0.5rem;
-    }
-    
-    .mat-mdc-card-content {
-      padding-top: 2rem;
-    }
-    .form-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .form-field label {
-      color: rgba(255, 255, 255, 0.9);
-      font-weight: 600;
-    }
-    .text-input {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background-color: rgba(255, 255, 255, 0.05);
-      color: white;
-      outline: none;
-    }
-    .text-input::placeholder {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    .text-input:focus {
-      border-color: #ff6b35;
-      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25);
-    }
-    .input-with-action {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .info-banner {
-      background: rgba(255, 217, 0, 0.12);
-      border: 1px solid rgba(255, 217, 0, 0.35);
-      color: #ffd900;
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-    .field-error {
-      color: #f44336;
-      font-size: 0.85rem;
-    }
-    
-    .form-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    
-    .primary-btn {
-      width: 100%;
-      background: linear-gradient(45deg, #ff6b35, #f7931e);
-      color: white;
-      border-radius: 25px;
-      padding: 12px 24px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-    
-    .error-message {
-      color: #f44336;
-      text-align: center;
-      margin-top: 1rem;
-      padding: 0.5rem;
-      background: rgba(244, 67, 54, 0.1);
-      border-radius: 8px;
-    }
-    
-    .auth-footer {
-      text-align: center;
-      padding-top: 0;
-    }
-    
-    .auth-footer p {
-      margin: 0;
-      color: rgba(255, 255, 255, 0.7);
-    }
-    
-    .auth-footer a {
-      color: #ff6b35;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    
-    .auth-footer a:hover {
-      text-decoration: underline;
-    }
+    .auth-container{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:linear-gradient(135deg,#0f0f23 0%,#1a1a3a 100%)}
+    .auth-card{width:100%;max-width:440px;background:rgba(255,255,255,.05);backdrop-filter:blur(10px);border-radius:20px;border:1px solid rgba(255,255,255,.1);color:#fff}
+    .mat-mdc-card-title{color:#ff6b35;font-size:1.9rem;font-weight:700}
+    .mat-mdc-card-subtitle{color:rgba(255,255,255,.7);margin-top:.5rem}
+    .mat-mdc-card-content{padding-top:1.5rem}
+    .info-banner{background:rgba(255,217,0,.1);border:1px solid rgba(255,217,0,.35);color:#ffd900;border-radius:10px;padding:10px 12px;margin-bottom:1rem;font-size:.85rem}
+    .form-field{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem}
+    .form-field label{color:rgba(255,255,255,.9);font-weight:600;font-size:.88rem}
+    .text-input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.05);color:#fff;outline:none;box-sizing:border-box}
+    .text-input:focus{border-color:#ff6b35;box-shadow:0 0 0 3px rgba(255,107,53,.25)}
+    .input-with-action{display:flex;gap:.5rem;align-items:center}
+    .toggle-btn{background:none;border:none;color:#fff;cursor:pointer;font-size:1rem;flex-shrink:0}
+    .field-error{color:#f44336;font-size:.8rem}
+    .form-actions{display:flex;flex-direction:column;gap:.8rem;margin-top:1rem}
+    .primary-btn{width:100%;background:linear-gradient(45deg,#ff6b35,#f7931e)!important;color:#fff!important;border-radius:25px!important;padding:12px 24px!important;font-weight:700!important;text-transform:uppercase}
+    .resend-btn{background:none;border:1px solid rgba(255,255,255,.25);color:rgba(255,107,53,.9);border-radius:25px;padding:10px;cursor:pointer;font-size:.9rem}
+    .otp-hint{color:rgba(255,255,255,.7);margin-bottom:1rem}
+    .otp-hint strong{color:#fff}
+    .error-message{color:#f44336;text-align:center;margin-top:1rem;padding:.5rem;background:rgba(244,67,54,.1);border-radius:8px}
+    .status-message{color:#4caf50;text-align:center;margin-top:.5rem;font-size:.9rem}
+    .auth-footer{text-align:center}
+    .auth-footer p{margin:0;color:rgba(255,255,255,.7)}
+    .auth-footer a{color:#ff6b35;text-decoration:none;font-weight:700}
   `]
 })
-export class RegisterComponent implements OnInit {
-  registerForm: FormGroup;
-  hidePassword = true;
-  hideConfirmPassword = true;
+export class RegisterComponent implements OnInit, OnDestroy {
+  regForm: FormGroup;
+  otpForm: FormGroup;
+  hidePw = true;
+  hideCpw = true;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
-  otpRequired = false;
-  statusMessage = '';
+  otpSent$: Observable<boolean>;
+  pendingEmail$: Observable<string | null>;
+  statusMsg = '';
+  private destroy$ = new Subject<void>();
 
-  constructor(
-    private fb: FormBuilder,
-    private store: Store,
-    private authService: AuthService
-  ) {
-    this.registerForm = this.fb.group({
-      age: ['', [Validators.required, Validators.min(16)]],
-      username: ['', [Validators.required, Validators.minLength(3)]],
-      email: ['', [Validators.required, Validators.email]],
-      freeFireId: ['', [Validators.required, Validators.pattern(/^[0-9]{6,12}$/)]],
-      freeFireName: ['', [Validators.required, Validators.minLength(3)]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+  constructor(private fb: FormBuilder, private store: Store) {
+    this.regForm = this.fb.group({
+      age:             ['', [Validators.required, Validators.min(13), Validators.max(100)]],
+      username:        ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30),
+                             Validators.pattern(/^[a-zA-Z0-9_]+$/)]],
+      email:           ['', [Validators.required, Validators.email]],
+      freeFireId:      ['', [Validators.required, Validators.pattern(/^\d{6,12}$/)]],
+      freeFireName:    ['', [Validators.required, Validators.minLength(2)]],
+      // min 8 to match backend RegisterRequest.password_strong validator
+      password:        ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]],
-      otp: ['']
-    }, { validators: this.passwordMatchValidator });
+    }, { validators: this.passwordMatch });
 
-    this.loading$ = this.store.select(selectAuthLoading);
-    this.error$ = this.store.select(selectAuthError);
+    this.otpForm = this.fb.group({
+      otp: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
+    });
+
+    this.loading$      = this.store.select(selectAuthLoading);
+    this.error$        = this.store.select(selectAuthError);
+    this.otpSent$      = this.store.select(selectRegisterOtpSent);
+    this.pendingEmail$ = this.store.select(selectPendingEmail);
   }
 
-  ngOnInit() {
-    this.store.dispatch(clearError());
+  ngOnInit() { this.store.dispatch(clearError()); }
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+
+  get f() { return this.regForm.controls; }
+
+  private passwordMatch(form: FormGroup) {
+    const pw  = form.get('password')?.value;
+    const cpw = form.get('confirmPassword')?.value;
+    return pw && cpw && pw !== cpw ? { passwordMismatch: true } : null;
   }
 
-  passwordMatchValidator(form: FormGroup) {
-    const password = form.get('password');
-    const confirmPassword = form.get('confirmPassword');
-    if (password && confirmPassword && password.value !== confirmPassword.value) {
-      return { passwordMismatch: true };
+  onRegister() {
+    if (this.regForm.valid) {
+      const v = this.regForm.value;
+      this.store.dispatch(initiateRegister({
+        userData: {
+          username:        v.username,
+          email:           v.email,
+          age:             Number(v.age),
+          password:        v.password,
+          confirmPassword: v.confirmPassword,
+          freeFireId:      v.freeFireId,
+          freeFireName:    v.freeFireName,
+        }
+      }));
     }
-    return null;
   }
 
-  onSubmit() {
-    if (this.registerForm.valid) {
-      const { email, otp, age } = this.registerForm.value;
-      if (age < 16) {
-        this.statusMessage = 'Age must be more than 15.';
-        return;
-      }
-      if (!otp) {
-        this.otpRequired = true;
-        this.statusMessage = 'Please enter the OTP sent to your email.';
-        return;
-      }
-      this.authService.verifyOtp({ email, otp }).subscribe(res => {
-        if (res.success) {
-          this.store.dispatch(register({ userData: this.registerForm.value }));
-        } else {
-          this.statusMessage = 'Invalid OTP. Please try again.';
+  onVerify() {
+    if (this.otpForm.valid) {
+      // take(1) prevents multiple dispatches if the selector emits more than once
+      this.store.select(selectPendingEmail).pipe(take(1), takeUntil(this.destroy$)).subscribe(email => {
+        if (email) {
+          this.store.dispatch(verifyRegister({ email, otp: this.otpForm.value.otp }));
         }
       });
     }
   }
 
-  onSendOtp() {
-    const emailCtrl = this.registerForm.get('email');
-    if (emailCtrl?.valid) {
-      this.authService.sendOtp(emailCtrl.value).subscribe(() => {
-        this.statusMessage = 'OTP sent to your email.';
-        this.otpRequired = true;
-      });
-    } else {
-      this.statusMessage = 'Please enter a valid email to receive OTP.';
-    }
+  onResend() {
+    this.store.select(selectPendingEmail).pipe(take(1), takeUntil(this.destroy$)).subscribe(email => {
+      if (email) {
+        this.store.dispatch(sendOtp({ email, purpose: 'register' }));
+        this.statusMsg = 'OTP resent!';
+        setTimeout(() => this.statusMsg = '', 3000);
+      }
+    });
   }
 }

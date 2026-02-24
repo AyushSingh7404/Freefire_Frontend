@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { Wallet, Transaction } from '../../core/models/wallet.model';
+import { Wallet, Transaction, PaymentInitiateResponse } from '../../core/models/wallet.model';
 import * as WalletActions from './wallet.actions';
 
 export interface WalletState {
@@ -7,61 +7,50 @@ export interface WalletState {
   transactions: Transaction[];
   loading: boolean;
   error: string | null;
+  // Razorpay flow
+  pendingOrder: PaymentInitiateResponse | null;
+  paymentLoading: boolean;
+  lastCreditedCoins: number | null;
 }
 
 const initialState: WalletState = {
   wallet: null,
   transactions: [],
   loading: false,
-  error: null
+  error: null,
+  pendingOrder: null,
+  paymentLoading: false,
+  lastCreditedCoins: null,
 };
 
 export const walletReducer = createReducer(
   initialState,
-  on(WalletActions.loadWallet, WalletActions.loadTransactions, 
-     WalletActions.processPayment, WalletActions.redeemCode, (state) => ({
+
+  // ── Load wallet ────────────────────────────────────────────────────────
+  on(WalletActions.loadWallet, (state) => ({ ...state, loading: true, error: null })),
+  on(WalletActions.loadWalletSuccess, (state, { wallet }) => ({ ...state, wallet, loading: false })),
+  on(WalletActions.loadWalletFailure, (state, { error }) => ({ ...state, loading: false, error })),
+
+  // ── Load transactions ──────────────────────────────────────────────────
+  on(WalletActions.loadTransactions, (state) => ({ ...state, loading: true, error: null })),
+  on(WalletActions.loadTransactionsSuccess, (state, { transactions }) => ({ ...state, transactions, loading: false })),
+  on(WalletActions.loadTransactionsFailure, (state, { error }) => ({ ...state, loading: false, error })),
+
+  // ── Initiate payment ───────────────────────────────────────────────────
+  on(WalletActions.initiatePayment, (state) => ({ ...state, paymentLoading: true, error: null, pendingOrder: null })),
+  on(WalletActions.initiatePaymentSuccess, (state, { order }) => ({ ...state, paymentLoading: false, pendingOrder: order })),
+  on(WalletActions.initiatePaymentFailure, (state, { error }) => ({ ...state, paymentLoading: false, error })),
+
+  // ── Verify payment ─────────────────────────────────────────────────────
+  on(WalletActions.verifyPayment, (state) => ({ ...state, paymentLoading: true, error: null })),
+  on(WalletActions.verifyPaymentSuccess, (state, { coinsCredited }) => ({
     ...state,
-    loading: true,
-    error: null
+    paymentLoading: false,
+    pendingOrder: null,
+    lastCreditedCoins: coinsCredited,
   })),
-  on(WalletActions.loadWalletSuccess, (state, { wallet }) => ({
-    ...state,
-    wallet,
-    loading: false
-  })),
-  on(WalletActions.loadTransactionsSuccess, (state, { transactions }) => ({
-    ...state,
-    transactions,
-    loading: false
-  })),
-  on(WalletActions.processPaymentSuccess, WalletActions.redeemCodeSuccess, (state) => ({
-    ...state,
-    loading: false
-  })),
-  on(WalletActions.deductCoins, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-  on(WalletActions.deductCoinsSuccess, (state, { amount }) => ({
-    ...state,
-    loading: false,
-    wallet: state.wallet ? { 
-      ...state.wallet, 
-      balance: Math.max(0, state.wallet.balance - amount),
-      updatedAt: new Date()
-    } : state.wallet
-  })),
-  on(WalletActions.deductCoinsFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-  on(WalletActions.loadWalletFailure, WalletActions.loadTransactionsFailure,
-     WalletActions.processPaymentFailure, WalletActions.redeemCodeFailure, 
-     (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  }))
+  on(WalletActions.verifyPaymentFailure, (state, { error }) => ({ ...state, paymentLoading: false, error })),
+
+  // ── Clear error ────────────────────────────────────────────────────────
+  on(WalletActions.clearWalletError, (state) => ({ ...state, error: null })),
 );

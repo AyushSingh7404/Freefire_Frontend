@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
- 
+import { loadMe } from './store/auth/auth.actions';
 
 @Component({
   selector: 'app-root',
@@ -16,17 +17,18 @@ import { NavbarComponent } from './shared/components/navbar/navbar.component';
     </div>
   `,
   styles: [`
-    .app-container {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
-    }
-    
-    .main-content {
-      min-height: calc(100vh - 80px);
-      padding-top: 80px;
-    }
-  `]
+    .app-container { min-height: 100vh; background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%); }
+    .main-content { min-height: calc(100vh - 80px); padding-top: 80px; }
+  `],
 })
-export class AppComponent {
-  title = 'AUREX';
+export class AppComponent implements OnInit {
+  constructor(private store: Store) {}
+
+  ngOnInit(): void {
+    // Restore user session on every page refresh.
+    // If the token is expired, loadMeFailure clears localStorage + store automatically.
+    if (localStorage.getItem('access_token')) {
+      this.store.dispatch(loadMe());
+    }
+  }
 }
