@@ -1,10 +1,12 @@
 // ── Frontend models (camelCase) ────────────────────────────────────────────
+/**
+ * Closed coin economy — single balance only.
+ * No withdrawals, no locked balance, no split between deposit vs winning coins.
+ */
 export interface Wallet {
   id: string;
   userId: string;
   balance: number;
-  lockedBalance: number;
-  availableBalance: number;   // balance - lockedBalance, computed by backend
   updatedAt: Date;
 }
 
@@ -27,8 +29,8 @@ export interface TransactionListResponse {
 
 // ── Razorpay payment flow ──────────────────────────────────────────────────
 export interface PaymentInitiateRequest {
-  amount_inr: number;   // in rupees
-  coins: number;        // coins to credit on success
+  /** UUID of the CoinPackage chosen by the user. Backend looks up price and coins. */
+  package_id: string;
 }
 
 export interface PaymentInitiateResponse {
@@ -46,23 +48,14 @@ export interface PaymentVerifyRequest {
   coins: number;
 }
 
-// Legacy - kept for backward compat with existing actions that reference it
-export interface PaymentRequest {
-  amount: number;
-  method: string;
-}
-
-export interface RedeemCodeRequest {
-  code: string;
-}
+// Note: No withdrawal interfaces exist — Aurex uses a closed coin economy.
+// Coins cannot be withdrawn as real money. See wallet.component for disclaimer.
 
 // ── Raw API response shapes ────────────────────────────────────────────────
 export interface ApiWallet {
   id: string;
   user_id: string;
   balance: number;
-  locked_balance: number;
-  available_balance: number;
   updated_at: string;
 }
 

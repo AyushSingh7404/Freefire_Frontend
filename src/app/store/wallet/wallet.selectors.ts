@@ -10,11 +10,6 @@ export const selectWalletBalance = createSelector(
   (wallet) => wallet?.balance ?? 0
 );
 
-export const selectAvailableBalance = createSelector(
-  selectWallet,
-  (wallet) => wallet?.availableBalance ?? 0
-);
-
 export const selectTransactions = createSelector(selectWalletState, (s) => s.transactions);
 
 export const selectWalletLoading = createSelector(selectWalletState, (s) => s.loading);

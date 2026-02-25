@@ -22,8 +22,6 @@ export class WalletService {
       id: w.id,
       userId: w.user_id,
       balance: w.balance,
-      lockedBalance: w.locked_balance,
-      availableBalance: w.available_balance,
       updatedAt: new Date(w.updated_at),
     };
   }

@@ -32,12 +32,12 @@ export class WalletEffects {
     )
   );
 
-  // Step 1: create Razorpay order on backend
+  // Step 1: create Razorpay order on backend using the package UUID
   initiatePayment$ = createEffect(() =>
     this.actions$.pipe(
       ofType(WalletActions.initiatePayment),
-      exhaustMap(({ amountInr, coins }) =>
-        this.walletService.initiatePayment({ amount_inr: amountInr, coins }).pipe(
+      exhaustMap(({ packageId }) =>
+        this.walletService.initiatePayment({ package_id: packageId }).pipe(
           map(order => WalletActions.initiatePaymentSuccess({ order })),
           catchError(err => of(WalletActions.initiatePaymentFailure({ error: err.message })))
         )

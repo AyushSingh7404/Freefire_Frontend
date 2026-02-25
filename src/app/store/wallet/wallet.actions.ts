@@ -12,9 +12,10 @@ export const loadTransactionsSuccess = createAction('[Wallet] Load Transactions 
 export const loadTransactionsFailure = createAction('[Wallet] Load Transactions Failure', props<{ error: string }>());
 
 // ── Razorpay: step 1 — initiate payment order ─────────────────────────────
+// packageId: UUID from GET /coin-packages — backend resolves price and coins
 export const initiatePayment = createAction(
   '[Wallet] Initiate Payment',
-  props<{ amountInr: number; coins: number }>()
+  props<{ packageId: string }>()
 );
 export const initiatePaymentSuccess = createAction(
   '[Wallet] Initiate Payment Success',

@@ -11,6 +11,8 @@ import { selectCurrentUser, selectIsAuthenticated, selectIsAdmin } from '../../.
 import { selectWalletBalance, selectPendingOrder } from '../../../store/wallet/wallet.selectors';
 import { logout } from '../../../store/auth/auth.actions';
 import { loadWallet, initiatePayment, verifyPayment } from '../../../store/wallet/wallet.actions';
+import { CoinPackage } from '../../../core/models/coin-package.model';
+import { CoinPackagesService } from '../../../core/services/coin-packages.service';
 
 declare var Razorpay: any;
 
@@ -157,14 +159,17 @@ declare var Razorpay: any;
           <button class="close-btn" (click)="closeCoinShop()">✕</button>
         </div>
         <div class="packages">
+          <div class="shop-loading" *ngIf="packagesLoading">
+            Loading packages…
+          </div>
           <div class="package" *ngFor="let p of coinPackages">
             <div class="pkg-coins">
               <lucide-icon name="coins" class="icon"></lucide-icon>
               <span>{{ p.coins }}</span>
             </div>
-            <div class="pkg-price">₹{{ p.price }}</div>
-            <button class="buy-btn" [disabled]="buying" (click)="onBuy(p.coins, p.price)">
-              {{ buying && activePkg === p.coins ? '...' : 'Buy' }}
+            <div class="pkg-price">₹{{ p.priceInr }}</div>
+            <button class="buy-btn" [disabled]="buying" (click)="onBuy(p)">
+              {{ buying && activePkg === p.id ? '...' : 'Buy' }}
             </button>
           </div>
         </div>
@@ -497,20 +502,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
   sidebarOpen  = false;
   coinShopOpen = false;
   buying       = false;
-  activePkg    = 0;
+  activePkg    = '';
 
-  coinPackages = [
-    { coins: 100,  price: 80   },
-    { coins: 310,  price: 250  },
-    { coins: 520,  price: 400  },
-    { coins: 1060, price: 800  },
-    { coins: 2180, price: 1600 },
-    { coins: 5600, price: 4000 },
-  ];
+  coinPackages: CoinPackage[] = [];
+  packagesLoading = true;
 
   private destroy$ = new Subject<void>();
 
-  constructor(private store: Store, private router: Router) {
+  constructor(
+    private store: Store,
+    private router: Router,
+    private coinPackagesService: CoinPackagesService,
+  ) {
     this.currentUser$     = this.store.select(selectCurrentUser);
     this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
     this.isAdmin$         = this.store.select(selectIsAdmin);
@@ -519,6 +522,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.store.dispatch(loadWallet());
+
+    // Load packages from API — single source of truth
+    this.coinPackagesService.getPackages()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (pkgs) => { this.coinPackages = pkgs; this.packagesLoading = false; },
+        error: ()    => { this.packagesLoading = false; },
+      });
+
     this.store.select(selectPendingOrder)
       .pipe(takeUntil(this.destroy$), filter((o): o is PaymentInitiateResponse => !!o))
       .subscribe(order => this.openRazorpay(order));
@@ -527,10 +539,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 
   /* ── Coin purchase ─────────────────────────────────────────────────── */
-  onBuy(coins: number, amountInr: number) {
-    this.buying   = true;
-    this.activePkg = coins;
-    this.store.dispatch(initiatePayment({ amountInr, coins }));
+  onBuy(pkg: CoinPackage) {
+    this.buying    = true;
+    this.activePkg = pkg.id;
+    this.store.dispatch(initiatePayment({ packageId: pkg.id }));
   }
 
   private openRazorpay(order: PaymentInitiateResponse) {
@@ -551,10 +563,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
           },
         }));
         this.buying    = false;
-        this.activePkg = 0;
+        this.activePkg = '';
         this.closeCoinShop();
       },
-      modal: { ondismiss: () => { this.buying = false; this.activePkg = 0; } },
+      modal: { ondismiss: () => { this.buying = false; this.activePkg = ''; } },
       theme: { color: '#ff6b35' },
     };
     new Razorpay(options).open();
